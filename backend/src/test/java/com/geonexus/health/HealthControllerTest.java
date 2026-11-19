@@ -1,5 +1,6 @@
 package com.geonexus.health;
 
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -7,29 +8,39 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.geonexus.security.SecurityTestConfiguration;
+import com.geonexus.security.TestKeys;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
-import com.geonexus.config.WebConfig;
-
-@WebMvcTest(controllers = HealthController.class)
-@Import(WebConfig.class)
-@TestPropertySource(properties = {
+/** Health stays public and CORS-restricted once Spring Security is in front of it. */
+@SpringBootTest(classes = SecurityTestConfiguration.class, properties = {
         "spring.application.name=geonexus-backend",
-        "geonexus.cors.allowed-origins=http://localhost:5173"
+        "geonexus.security.jwt.secret=" + TestKeys.SECRET,
+        "geonexus.security.cors.allowed-origins=http://localhost:5173"
 })
+@Import(HealthController.class)
 class HealthControllerTest {
 
     @Autowired
+    private WebApplicationContext context;
+
     private MockMvc mockMvc;
 
+    @BeforeEach
+    void setUp() {
+        mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
+    }
+
     @Test
-    void healthReturnsUpAsJson() throws Exception {
+    void healthIsPublicAndReturnsUpAsJson() throws Exception {
         mockMvc.perform(get("/api/v1/health").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
@@ -65,8 +76,8 @@ class HealthControllerTest {
     }
 
     @Test
-    void unsupportedMethodIsRejectedWithoutDetails() throws Exception {
+    void nonGetRequestsRequireAuthentication() throws Exception {
         mockMvc.perform(post("/api/v1/health"))
-                .andExpect(status().isMethodNotAllowed());
+                .andExpect(status().isUnauthorized());
     }
 }

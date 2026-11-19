@@ -24,6 +24,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- Spatial: jts-core is not managed by Spring Boot; keep it aligned with the version hibernate-spatial uses. -->
     <jts.version>1.20.0</jts.version>
+    <!-- jjwt is not managed by the Spring Boot BOM; keep all three artifacts on the same version. -->
+    <jjwt.version>0.12.6</jjwt.version>
     <!-- PostgisTestDatabase uses the Testcontainers 1.x API (org.testcontainers.containers.PostgreSQLContainer).
          Pinned so a future Spring Boot upgrade that manages Testcontainers 2.x does not silently break the tests. -->
     <testcontainers.version>1.21.3</testcontainers.version>
@@ -35,6 +37,32 @@
       <artifactId>spring-boot-starter-web</artifactId>
     </dependency>
     <!-- Persistence: JPA + PostGIS spatial types. Versions come from the Spring Boot BOM except jts-core. -->
+    <!-- Security (Phase 3): filter chain, method security, BCrypt; Bean Validation for DTOs and properties. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-api</artifactId>
+      <version>${jjwt.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-impl</artifactId>
+      <version>${jjwt.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-jackson</artifactId>
+      <version>${jjwt.version}</version>
+      <scope>runtime</scope>
+    </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -66,6 +94,11 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-test</artifactId>
       <scope>test</scope>
     </dependency>
     <!-- Database tests: a throw-away PostGIS container (needs Docker) or a scratch server via GEONEXUS_TEST_DB_*. -->

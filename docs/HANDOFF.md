@@ -1,6 +1,7 @@
 # GeoNexus – Handoff
 
 **Current state:** Phase 1 (application foundation) and Phase 2 (data layer) are integrated into one repository.
+**Phase 3 (security) merged but unverified** (see 'Phase 3 merge' below). Not started: every later phase.
 **Not started:** Phase 3 (authentication/authorization) and every later phase.
 **Not fully verified:** the Java build and the Flyway/JPA runtime could not be run in the integration session (see below).
 
@@ -77,6 +78,28 @@ docker compose up -d db
 - Applied migrations are immutable: every schema change is a new `V7+` file.
 - Java 21 is targeted although the original README mentioned 25.
 - `.gitignore` ignores `*.jar`, so no Maven wrapper jar can be committed.
+
+## Next phase (not started here)
+
+Phase 3: Spring Security with BCrypt/Argon2 hashing into `users.password_hash`, JWT, role-based authorization, application
+audit events (`origin = 'APP'`), and widening CORS only as needed. Later API phases must call `GeometryPolicy.requireStorable`
+for every submitted geometry.
+
+## Phase 3 merge (security)
+
+| Topic | Decision |
+|---|---|
+| Role name | DB seed and `RoleName` use `ADMIN`; the security workstream used `ADMINISTRATOR`. Security code, tests and docs were renamed to `ADMIN` (no migration change). |
+| CORS | Phase 1 `WebConfig`/`WebConfigTest` removed; `SecurityConfig` + `CorsConfigurationSourceFactory` own CORS (GET/POST/PUT/PATCH/DELETE/OPTIONS on `/api/**`, `Authorization` header allowed). Same env var `GEONEXUS_CORS_ALLOWED_ORIGINS` is reused. |
+| Health | `GET /api/v1/health` is explicitly `permitAll`; everything else is authenticated by default. `HealthControllerTest` rewritten to run through the security chain. |
+| User adapter | `com.geonexus.user.JpaUserAccountProvider` implements `UserAccountProvider` using `findWithRolesBy...`; lock state from `locked_until`. |
+| Clock | `SecurityConfig.securityClock()` is the only `Clock` bean (the adapter uses it). |
+| Config | `application.yml` gained `geonexus.security.*`; `GEONEXUS_SECURITY_JWT_SECRET` is required (no default). `.env.example` updated. |
+| Dependencies | Added starter-security, starter-validation, jjwt 0.12.6 (api/impl/jackson), spring-security-test. |
+
+**Not run:** `mvn verify` (no Maven Central here). Phase 3 tests and the adapter have never been compiled.
+**Still open:** persistent audit of security events, `failed_login_attempts` columns unused (limiter is in-memory), no logout/refresh, no user seed.
+Set `GEONEXUS_SECURITY_JWT_SECRET` in `.env` before starting the backend.
 
 ## Next phase (not started here)
 
