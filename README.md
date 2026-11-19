@@ -30,10 +30,10 @@ The project is currently under development. Features described below represent t
 | Frontend | React.js, TypeScript, Vite, Tailwind CSS |
 | Mapping | Leaflet, GeoJSON, OpenStreetMap |
 | Backend | Java 21, Spring Boot 3.5, Spring Web |
-| Persistence | Spring Data JPA, Hibernate |
+| Persistence | Spring Data JPA, Hibernate (+ Hibernate Spatial), Flyway migrations |
 | Security | Spring Security |
 | Database | PostgreSQL, PostGIS |
-| Geospatial Processing | JTS, GeoTools |
+| Geospatial Processing | JTS (GeoTools planned) |
 | Image Processing | OpenCV |
 | Build Tool | Maven |
 
@@ -52,17 +52,18 @@ GeoNexus is planned around a frontend-backend architecture:
 
 ```text
 GeoNexus/
-├── frontend/       # React + TypeScript application
-├── backend/        # Java + Spring Boot application
-├── docs/           # Project documentation and diagrams
-├── screenshots/    # Application screenshots
-├── .env.example    # Example environment configuration
+├── frontend/           # React + TypeScript + Vite shell (Phase 1)
+├── backend/            # Spring Boot app: health API, JPA entities, Flyway migrations (Phases 1-2)
+│   └── src/main/resources/db/migration/   # V1-V6: the single migration history
+├── docs/               # architecture.md, data-model.md, setup.md, HANDOFF.md
+├── docker-compose.yml  # PostgreSQL 16 + PostGIS 3.5 for local development
+├── .env.example        # The single environment-variable contract
 ├── .gitignore
 ├── LICENSE
 └── README.md
 ```
 
-`frontend/`, `backend/` and `docker-compose.yml` now exist (Phase 1 foundation); `screenshots/` will be added later.
+`screenshots/` will be added later.
 
 ## Getting Started
 
@@ -105,8 +106,12 @@ npm ci
 npm run dev                   # http://localhost:5173 (proxies /api to the backend)
 ```
 
-See [`docs/phase-1-foundation.md`](docs/phase-1-foundation.md) for checks and the configuration reference, and
-[`docs/HANDOFF.md`](docs/HANDOFF.md) for current status. No authentication exists yet: do not expose this build to a network.
+The database must be PostGIS-enabled (the Compose service is). Flyway creates the schema on first backend start.
+
+See [`docs/setup.md`](docs/setup.md) for checks, database tests and the configuration reference,
+[`docs/data-model.md`](docs/data-model.md) for the schema and the CRS/SRID policy (EPSG:4326, geography-based area),
+[`docs/architecture.md`](docs/architecture.md) for decisions, and [`docs/HANDOFF.md`](docs/HANDOFF.md) for current status.
+No authentication exists yet: do not expose this build to a network.
 
 ## Configuration
 
@@ -114,7 +119,7 @@ Use an `.env.example` file to document required configuration keys without inclu
 
 ## Development Status
 
-**Status:** Early development – Phase 1 foundation integrated; build verification pending (see `docs/HANDOFF.md`).
+**Status:** Early development – Phase 1 (foundation) and Phase 2 (data layer) integrated. Maven/Docker verification is still pending (see `docs/HANDOFF.md`). Authentication (Phase 3) and the parcel API are not implemented.
 
 Implementation details, screenshots, API documentation, and deployment instructions will be added as the project progresses.
 

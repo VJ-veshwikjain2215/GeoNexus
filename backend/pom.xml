@@ -22,6 +22,11 @@
     <!-- Java 21 (LTS). Spring Boot 3.5 also supports newer JDKs; raise this deliberately and re-run the tests. -->
     <java.version>21</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- Spatial: jts-core is not managed by Spring Boot; keep it aligned with the version hibernate-spatial uses. -->
+    <jts.version>1.20.0</jts.version>
+    <!-- PostgisTestDatabase uses the Testcontainers 1.x API (org.testcontainers.containers.PostgreSQLContainer).
+         Pinned so a future Spring Boot upgrade that manages Testcontainers 2.x does not silently break the tests. -->
+    <testcontainers.version>1.21.3</testcontainers.version>
   </properties>
 
   <dependencies>
@@ -29,10 +34,28 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
     </dependency>
-    <!-- Database access foundation. No entities or migrations exist in Phase 1. -->
+    <!-- Persistence: JPA + PostGIS spatial types. Versions come from the Spring Boot BOM except jts-core. -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.hibernate.orm</groupId>
+      <artifactId>hibernate-spatial</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.locationtech.jts</groupId>
+      <artifactId>jts-core</artifactId>
+      <version>${jts.version}</version>
+    </dependency>
+    <!-- Schema is owned by Flyway migrations in src/main/resources/db/migration (single history, V1..). -->
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-database-postgresql</artifactId>
     </dependency>
     <dependency>
       <groupId>org.postgresql</groupId>
@@ -43,6 +66,17 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- Database tests: a throw-away PostGIS container (needs Docker) or a scratch server via GEONEXUS_TEST_DB_*. -->
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
