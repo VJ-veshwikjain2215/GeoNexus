@@ -77,6 +77,7 @@ export GEONEXUS_TEST_DB_PASSWORD=...
 ```
 
 `GeometryPolicyTest` and the security tests (`com.geonexus.security.*`, `HealthControllerTest`) need no database.
+`GeometryPolicyTest`, `WebConfigTest` and `HealthControllerTest` need no database.
 
 ## Configuration reference (single contract: `.env.example`)
 

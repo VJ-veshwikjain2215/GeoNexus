@@ -2,6 +2,7 @@
 
 **Current state:** Phase 1 (application foundation) and Phase 2 (data layer) are integrated into one repository.
 **Phase 3 (security) merged but unverified** (see 'Phase 3 merge' below). Not started: every later phase.
+**Not started:** Phase 3 (authentication/authorization) and every later phase.
 **Not fully verified:** the Java build and the Flyway/JPA runtime could not be run in the integration session (see below).
 
 ## What is in the repository
@@ -99,3 +100,9 @@ for every submitted geometry.
 **Not run:** `mvn verify` (no Maven Central here). Phase 3 tests and the adapter have never been compiled.
 **Still open:** persistent audit of security events, `failed_login_attempts` columns unused (limiter is in-memory), no logout/refresh, no user seed.
 Set `GEONEXUS_SECURITY_JWT_SECRET` in `.env` before starting the backend.
+
+## Next phase (not started here)
+
+Phase 3: Spring Security with BCrypt/Argon2 hashing into `users.password_hash`, JWT, role-based authorization, application
+audit events (`origin = 'APP'`), and widening CORS only as needed. Later API phases must call `GeometryPolicy.requireStorable`
+for every submitted geometry.
