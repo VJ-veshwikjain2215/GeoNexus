@@ -1,0 +1,27 @@
+# GeoNexus local development database: PostgreSQL with the PostGIS extension.
+# Compose reads values from the `.env` file next to this file (copy `.env.example` first).
+# This file contains no credentials; DB_USERNAME and DB_PASSWORD are required.
+name: geonexus
+
+services:
+  db:
+    image: postgis/postgis:16-3.5
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-geonexus}
+      POSTGRES_USER: ${DB_USERNAME:?Set DB_USERNAME in .env (see .env.example)}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env (see .env.example)}
+    ports:
+      # Bound to the loopback interface only: the database is not exposed to the network.
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
+    volumes:
+      - geonexus_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  geonexus_pgdata:
