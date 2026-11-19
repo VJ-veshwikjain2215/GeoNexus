@@ -1,72 +1,85 @@
 # GeoNexus – Handoff
 
-**Current phase:** Phase 1 – application foundation. Integrated into the repository root; **not yet fully verified** (see below).
+**Current state:** Phase 1 (application foundation) and Phase 2 (data layer) are integrated into one repository.
+**Not started:** Phase 3 (authentication/authorization) and every later phase.
+**Not fully verified:** the Java build and the Flyway/JPA runtime could not be run in the integration session (see below).
 
-## Completed
+## What is in the repository
 
-- Spring Boot backend skeleton (`backend/`) with `GET /api/v1/health`, env-driven datasource, restrictive CORS, safe error settings and tests.
-- React/TypeScript/Vite/Tailwind shell (`frontend/`) with a health-status panel and tests.
-- PostGIS Docker Compose file (`docker-compose.yml`), loopback-only DB port.
-- Merged `.env.example` (see `docs/phase-1-foundation.md` for the configuration reference).
-- Phase 1 package docs, kept as `docs/phase-1-foundation.md`.
+- `backend/` – Spring Boot 3.5.7 / Java 21 / Maven, base package `com.geonexus`.
+  - Phase 1: `GET /api/v1/health`, env-driven datasource, restrictive read-only CORS, safe error settings, MockMvc tests.
+  - Phase 2: Flyway migrations `V1`–`V6` (PostGIS, users/roles, parcels, surveys, audit, parcel geometries), JPA entities and
+    repositories (`user`, `parcel`, `survey`, `geometry`, `audit`, `common`), `GeometryPolicy` (CRS/SRID rules), database and
+    unit tests, `scripts/validate-sql.sh`.
+- `frontend/` – React 19 / TypeScript / Vite / Tailwind shell with a backend-status panel (unchanged from Phase 1).
+- `docker-compose.yml` – PostgreSQL 16 + PostGIS 3.5, loopback-only port.
+- `.env.example` – the single environment contract (Phase 2 added only optional, commented `GEONEXUS_TEST_DB_*` test variables).
+- `docs/` – `architecture.md`, `data-model.md` (schema + CRS policy), `setup.md` (run/check/config), this file.
 
-## Verification status
+## Integration decisions
 
-### Authoring sandbox (from the Phase 1 package, not re-run)
+| Topic | Decision |
+|---|---|
+| Source layout | Phase 1 `backend/`, `frontend/`, `docker-compose.yml` placed at the repo root; Phase 2 files merged into `backend/` with no overwrites (collision check found none). Workstream folders and their `INTEGRATION.md` files are not carried over. |
+| Package names | Both use `com.geonexus`; Phase 2 packages do not overlap Phase 1 (`config`, `health`). No `@EntityScan`/`@EnableJpaRepositories` needed. |
+| Flyway history | One history in `backend/src/main/resources/db/migration`. Phase 1 had no migrations, so Phase 2 keeps `V1`–`V6` unrenumbered. |
+| Dependencies | Added to the existing `pom.xml`: `hibernate-spatial`, `flyway-core`, `flyway-database-postgresql` (all Boot-managed), `jts-core` 1.20.0 (`jts.version`), Testcontainers `postgresql` + `junit-jupiter` (test, `testcontainers.version` 1.21.3 pinned for the 1.x API the tests use). Spring Boot parent stays defined once (3.5.7). |
+| Database config | Phase 1 `application.yml` already had `ddl-auto: none` and `open-in-view: false`; added `spring.flyway.enabled=true` and `locations`. Datasource variables unchanged (`DB_*`). |
+| PostGIS version | Compose uses `16-3.5`; Phase 2 tests used `16-3.4`. Test image changed to `16-3.5` so tests and local runtime match. Phase 2's SQL was validated on PostGIS 3.4 (3.4.2 by its authors, 3.4.3 here). |
+| Environment variables | One contract. No renames were needed. |
+| Docs | Phase 1's package README (`docs/phase-1-foundation.md`) was folded into `docs/setup.md` (no duplicate config docs); Phase 2's `data-model.md` kept as `docs/data-model.md` with stale references fixed; `dependency-additions.md` merged into `pom.xml` and dropped. |
+| Base repository | The upload also contained `GeoNexus-main.zip` (baseline) and `GeoNexus-phase1-integrated.zip` (baseline + Phase 1). The latter's `backend/`, `frontend/`, `docker-compose.yml` and `.env.example` were checked byte-identical to the Phase 1 workstream, so its root was used as the base; root docs were then updated for Phase 2. |
+
+## Verification results (integration session)
 
 | Check | Result |
 |---|---|
-| `npm run lint` | passed |
-| `npm run typecheck` | passed |
+| `npm ci`, `npm run lint`, `npm run typecheck` | passed |
 | `npm test` (Vitest, 5 tests) | passed |
 | `npm run build` | passed |
-| Vite dev proxy → stand-in `/api/v1/health` | HTTP 200 through `localhost:5173` |
-| `pom.xml`, `application.yml`, `docker-compose.yml` parse | well-formed |
-| Backend Java sources (6 files) | syntax-parsed with `javac` API, 0 errors |
+| Migrations `V1`–`V6` applied in order with `psql` to an empty database (PostgreSQL 16.10 + PostGIS 3.4.3) | passed |
+| `schema_assertions.sql` via `scripts/validate-sql.sh` (positive assertions and must-fail checks) | passed |
+| `geometry_columns` for `parcel_geometries` | `4326 / MULTIPOLYGON` |
+| Migration file numbering | one file each for V1–V6, no duplicates |
+| Backend Java (36 files, main + test) parsed with `javac` | 0 syntax errors (syntax only; symbols not resolved) |
 
-### Integration session (INTEGRATION.md section 5)
+**NOT run (environment limits, not known defects):**
 
-The integration session had **no access to Maven Central or the npm registry** (egress policy denied
-`repo.maven.apache.org`; `registry.npmjs.org` did not resolve) and **no Docker daemon**. Results:
-
-| Step | Result |
+| Check | Why |
 |---|---|
-| `docker compose up -d db` | **NOT RUN** – no Docker daemon in the session |
-| `docker compose config` | passed (db port bound to `127.0.0.1`, required vars enforced) |
-| `mvn -B verify` | **NOT RUN / FAILED TO START** – parent POM `spring-boot-starter-parent:3.5.7` could not be downloaded (network denied) |
-| `npm ci` | **FAILED** – registry unreachable; lint, typecheck, test and build therefore **NOT RUN** |
-| `pom.xml`, `application.yml`, `docker-compose.yml` well-formedness | passed |
+| `mvn -B verify` (compile, `GeometryPolicyTest`, MockMvc tests, `MigrationAssertionsTest`, `PersistenceIntegrationTest`) | No Maven Central access, so no dependencies could be resolved; Maven could not be installed from the Ubuntu mirror either |
+| Flyway execution and `flyway_schema_history` (expect 6 successful rows) | Same; SQL was run through `psql`, not Flyway |
+| `mvn spring-boot:run` against a migrated database | Same |
+| `docker compose up -d db`, image `postgis/postgis:16-3.5` | No Docker daemon |
+| Testcontainers-based tests | No Docker |
 
-None of these failures indicates a defect in the code; they are environment limits. **Nothing was fixed or changed in the
-Phase 1 code.** Whether Spring Boot `3.5.7` resolves, whether the MockMvc tests pass, and whether the
-`postgis/postgis:16-3.5` image works remain unconfirmed.
+Open risks to check on first Java compile: Spring Boot `3.5.7` resolving; `hibernate-spatial` and `jts-core` 1.20.0 being
+the matching pair (`mvn dependency:tree`); Hibernate JSON/spatial annotations in the entities; Testcontainers 1.x API; the
+simple-query-mode assertion script in `MigrationAssertionsTest` (fall back to `validate-sql.sh` in CI if problematic).
 
-**Run this on a machine with network access and Docker before relying on the foundation:**
+**Run this on a machine with Maven Central and Docker before relying on the integration:**
 
 ```bash
-cp .env.example .env        # then set a unique DB_PASSWORD
+cp .env.example .env            # set a unique DB_PASSWORD
 docker compose up -d db
 (cd backend && mvn -B verify)
+(cd backend && mvn spring-boot:run)   # then: SELECT * FROM flyway_schema_history;  -> 6 rows
 (cd frontend && npm ci && npm run lint && npm run typecheck && npm test && npm run build)
 ```
 
-If Maven reports that `3.5.7` is missing, move to the newest Spring Boot 3.5.x.
-
 ## Known issues / risks
 
-- No authentication yet (health is public by design).
-- App DB user is the container superuser.
-- Backend startup requires a running database.
-- `README.md` previously said Java 25; the backend targets Java 21 (`java.version` in `backend/pom.xml`).
-- CORS allows only `GET, HEAD, OPTIONS` until write endpoints exist; widen deliberately.
-- `.gitignore` ignores `*.jar`, so no Maven wrapper jar can be committed; a local Maven install is required.
-- Do not expose this build to a network or store real land data in it.
+- No authentication or authorization yet (health is public by design). Do not expose to a network or load real land data.
+- The app connects as the container superuser; the owner/runtime role split in `docs/architecture.md` is not implemented, and a superuser can disable the immutability triggers.
+- Backend startup requires a running, PostGIS-enabled database; V1 runs `CREATE EXTENSION IF NOT EXISTS postgis` (on managed PostgreSQL enable it once as admin).
+- CORS allows only `GET, HEAD, OPTIONS`; widen deliberately when write endpoints arrive.
+- Overlap between parcels is reported, not forbidden. Four-eyes review means demo data needs at least two users. No seed users exist.
+- Applied migrations are immutable: every schema change is a new `V7+` file.
+- Java 21 is targeted although the original README mentioned 25.
+- `.gitignore` ignores `*.jar`, so no Maven wrapper jar can be committed.
 
-## Suggested next task
+## Next phase (not started here)
 
-Confirm against the project's phase plan (Phase 2 is not defined by the Phase 1 package): introduce Flyway and the first versioned
-migration (keep `spring.jpa.hibernate.ddl-auto=none`), document and enforce the CRS/SRID policy, and add Spring Security with
-BCrypt/Argon2 + JWT and role-based authorization, each in its own reviewed change. Do not start boundary-detection or AI work
-before the parcel and review workflow exists.
-
-**No later phase has been started.**
+Phase 3: Spring Security with BCrypt/Argon2 hashing into `users.password_hash`, JWT, role-based authorization, application
+audit events (`origin = 'APP'`), and widening CORS only as needed. Later API phases must call `GeometryPolicy.requireStorable`
+for every submitted geometry.

@@ -80,13 +80,30 @@ Supporting processing:
 - REST base path: `/api/v1`.
 - Frontend dev: Vite proxies `/api` to the backend, so browser calls are same-origin.
 - CORS: exact configured origins only (wildcards rejected at startup), read-only methods (`GET, HEAD, OPTIONS`), no credentials.
-- Schema changes will come only from versioned migrations (Flyway, later phase); `spring.jpa.hibernate.ddl-auto=none`.
+- Schema changes come only from versioned Flyway migrations (`backend/src/main/resources/db/migration`, one history, `V1`–`V6` so far); `spring.jpa.hibernate.ddl-auto=none`.
+
+## Confirmed decisions (Phase 2 – data model)
+
+Full detail: [`data-model.md`](data-model.md).
+
+- Database: PostgreSQL 16 + PostGIS; JPA entities with Hibernate Spatial and JTS in the `com.geonexus` packages `user`, `parcel`, `survey`, `geometry`, `audit`, `common`.
+- Stored CRS: **EPSG:4326** only, axis order lon/lat, column type `geometry(MultiPolygon, 4326)`; GeoJSON (RFC 7946) is served unchanged with no `crs` member and no reprojection.
+- Area/length use `geography` (spheroidal metres), never planar maths on lon/lat. `GeometryPolicy.requireStorable()` is the Java gate and every API phase must call it; database `CHECK`s are the last line of defence.
+- Parcel boundaries are **append-only versions** (`parcel_geometries`); a resurvey adds a version, never overwrites. Status flow `PROPOSED → VERIFIED → SUPERSEDED` (or `REJECTED`), one verified boundary per parcel, four-eyes review enforced by database triggers. AI-detected geometry starts unverified like any other.
+- Audit trail is append-only (`audit_records`); the database writes geometry events (`origin = 'DB'`), the application will write the rest (`origin = 'APP'`).
+- Overlap between parcels is reported (`findCurrentOverlapping`), not forbidden.
+- Role catalogue: ADMIN, SURVEYOR, REVIEWER, VIEWER. Users store only a password hash; authorization is not implemented yet.
+
+### Database roles (recommended, not yet implemented)
+
+Run Flyway with an owner/migration role and the application with a separate least-privilege role holding `SELECT/INSERT/UPDATE`
+on the tables, `INSERT/SELECT` only on `audit_records`, and no `DELETE`, `TRUNCATE` or trigger-disable rights on
+`parcel_geometries` / `audit_records`. The triggers stop accidental mutation; role separation stops a compromised app account
+from dropping them. Today the app uses the container superuser (local development only).
 
 ## Decisions still to confirm
 
-- Authentication provider and role model.
-- Exact parcel, survey, and resurvey data model.
-- Geometry storage conventions and CRS.
+- Authentication provider and token model (Phase 3; the `users`/`roles` schema is ready for it).
 - API versioning and error response format.
 - Image storage and processing pipeline.
 - Deployment topology and managed PostgreSQL/PostGIS provider.

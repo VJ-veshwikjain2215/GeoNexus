@@ -17,8 +17,12 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      # Schema changes will be made only by versioned Flyway migrations (a later phase), never by Hibernate.
+      # Schema changes are made only by versioned Flyway migrations, never by Hibernate.
+      # Do not use create/update, and avoid validate (spatial column type validation is unreliable).
       ddl-auto: none
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
   mvc:
     problemdetails:
       enabled: true
