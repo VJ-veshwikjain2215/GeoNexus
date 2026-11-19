@@ -74,6 +74,14 @@ Supporting processing:
 - Use synthetic or properly licensed datasets.
 - Avoid collecting or exposing personal and ownership information unless there is a clear, authorized requirement.
 
+## Confirmed decisions (Phase 1)
+
+- Backend: Spring Boot 3.5.x on Java 21 (LTS), Maven.
+- REST base path: `/api/v1`.
+- Frontend dev: Vite proxies `/api` to the backend, so browser calls are same-origin.
+- CORS: exact configured origins only (wildcards rejected at startup), read-only methods (`GET, HEAD, OPTIONS`), no credentials.
+- Schema changes will come only from versioned migrations (Flyway, later phase); `spring.jpa.hibernate.ddl-auto=none`.
+
 ## Decisions still to confirm
 
 - Authentication provider and role model.

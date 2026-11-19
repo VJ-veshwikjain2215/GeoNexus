@@ -29,7 +29,7 @@ The project is currently under development. Features described below represent t
 |---|---|
 | Frontend | React.js, TypeScript, Vite, Tailwind CSS |
 | Mapping | Leaflet, GeoJSON, OpenStreetMap |
-| Backend | Java 25, Spring Boot, Spring Web |
+| Backend | Java 21, Spring Boot 3.5, Spring Web |
 | Persistence | Spring Data JPA, Hibernate |
 | Security | Spring Security |
 | Database | PostgreSQL, PostGIS |
@@ -62,7 +62,7 @@ GeoNexus/
 └── README.md
 ```
 
-This is the intended structure; directories will be added as development progresses.
+`frontend/`, `backend/` and `docker-compose.yml` now exist (Phase 1 foundation); `screenshots/` will be added later.
 
 ## Getting Started
 
@@ -70,10 +70,10 @@ This is the intended structure; directories will be added as development progres
 
 Install the following tools before running the project:
 
-- Java JDK 25
-- Maven
-- Node.js (LTS) and npm
-- PostgreSQL with PostGIS
+- Java JDK 21 or newer (backend targets Java 21)
+- Maven 3.9+
+- Node.js 22 LTS (20.19+ also works) and npm 10+
+- Docker with the Compose plugin (PostgreSQL + PostGIS for local development)
 - Git
 
 ### Clone the Repository
@@ -83,26 +83,30 @@ git clone https://github.com/VJ-veshwikjain2215/GeoNexus.git
 cd GeoNexus
 ```
 
-### Backend
+### Configuration and database
 
-Once the Spring Boot application is available in `backend/`:
+```bash
+cp .env.example .env          # set a unique DB_PASSWORD; never commit .env
+docker compose up -d db
+```
+
+### Backend
 
 ```bash
 cd backend
-mvn spring-boot:run
+mvn spring-boot:run           # health check: curl -i http://localhost:8080/api/v1/health
 ```
 
 ### Frontend
 
-Once the React application is available in `frontend/`:
-
 ```bash
 cd frontend
-npm install
-npm run dev
+npm ci
+npm run dev                   # http://localhost:5173 (proxies /api to the backend)
 ```
 
-> The run commands and configuration will be finalized alongside the application. Database connection settings should be supplied through local environment configuration. Do not commit credentials or secrets.
+See [`docs/phase-1-foundation.md`](docs/phase-1-foundation.md) for checks and the configuration reference, and
+[`docs/HANDOFF.md`](docs/HANDOFF.md) for current status. No authentication exists yet: do not expose this build to a network.
 
 ## Configuration
 
@@ -110,7 +114,7 @@ Use an `.env.example` file to document required configuration keys without inclu
 
 ## Development Status
 
-**Status:** Planning / early development.
+**Status:** Early development – Phase 1 foundation integrated; build verification pending (see `docs/HANDOFF.md`).
 
 Implementation details, screenshots, API documentation, and deployment instructions will be added as the project progresses.
 

@@ -1,0 +1,13 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-ink: #0f2f3a;
+  --color-paper: #f3f6f5;
+  --font-sans: 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Faint survey-contour pattern behind the page header. */
+.contour-bg {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='120' viewBox='0 0 240 120'%3E%3Cg fill='none' stroke='%23e8a33d' stroke-opacity='.28' stroke-width='1'%3E%3Cpath d='M-10 90c30-40 60-40 90-10s60 20 90-20 50-20 70 0'/%3E%3Cpath d='M-10 70c30-40 60-40 90-10s60 20 90-20 50-20 70 0'/%3E%3Cpath d='M-10 50c30-40 60-40 90-10s60 20 90-20 50-20 70 0'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 240px 120px;
+}
