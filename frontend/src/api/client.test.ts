@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { authApi, geometryApi, parcelApi, tokenStore } from './client'
+import { authApi, geometryApi, parcelApi, tokenStore, haversineDistanceM, wgs84ToUtm44 } from './client'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -120,5 +120,45 @@ describe('GeoNexus API Client', () => {
       '/api/v1/parcels/p-1/geometries/g-1/reject',
       expect.objectContaining({ method: 'POST' })
     )
+  })
+
+  it('calls GET /api/v1/parcels/{id}/spatial-analysis to retrieve spatial metrics', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({
+        parcelId: 'p-1',
+        parcelCode: 'PR-2024-0412',
+        recordedAreaHa: 14.285,
+        perimeterM: 1894.20,
+        isValidTopology: true,
+        overlappingParcelsCount: 0,
+        stationDisplacements: []
+      })
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const analysis = await parcelApi.getSpatialAnalysis('p-1')
+
+    expect(analysis.parcelCode).toBe('PR-2024-0412')
+    expect(analysis.recordedAreaHa).toBe(14.285)
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/v1/parcels/p-1/spatial-analysis',
+      expect.anything()
+    )
+  })
+
+  it('calculates accurate spheroidal distance using haversineDistanceM (MAP-01)', () => {
+    // Distance between (16.3021, 80.4312) and (16.3025, 80.4355) is ~460m
+    const dist = haversineDistanceM(16.3021, 80.4312, 16.3025, 80.4355)
+    expect(dist).toBeGreaterThan(400)
+    expect(dist).toBeLessThan(500)
+  })
+
+  it('converts WGS84 coordinates to UTM Zone 44N accurately (GEO-06)', () => {
+    const utm = wgs84ToUtm44(80.4312, 16.3021)
+    // Expect Easting in [430000, 450000] and Northing in [1800000, 1810000]
+    expect(utm.easting).toBeGreaterThan(430000)
+    expect(utm.easting).toBeLessThan(450000)
+    expect(utm.northing).toBeGreaterThan(1800000)
+    expect(utm.northing).toBeLessThan(1810000)
   })
 })

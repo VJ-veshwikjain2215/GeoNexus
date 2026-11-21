@@ -1,6 +1,8 @@
 package com.geonexus.parcel;
 
 import com.geonexus.common.dto.PagedResponse;
+import com.geonexus.geometry.SpatialAnalysisService;
+import com.geonexus.geometry.dto.SpatialAnalysisResponse;
 import com.geonexus.geometry.geojson.GeoJsonFeature;
 import com.geonexus.geometry.geojson.GeoJsonFeatureCollection;
 import com.geonexus.parcel.dto.CreateParcelRequest;
@@ -35,9 +37,11 @@ import java.util.UUID;
 public class ParcelController {
 
     private final ParcelService parcelService;
+    private final SpatialAnalysisService spatialAnalysisService;
 
-    public ParcelController(ParcelService parcelService) {
+    public ParcelController(ParcelService parcelService, SpatialAnalysisService spatialAnalysisService) {
         this.parcelService = parcelService;
+        this.spatialAnalysisService = spatialAnalysisService;
     }
 
     @GetMapping
@@ -71,6 +75,12 @@ public class ParcelController {
     @PreAuthorize(SecurityExpressions.ANY_ROLE)
     public GeoJsonFeature<ParcelProperties> getGeoJson(@PathVariable UUID id) {
         return parcelService.getParcelGeoJson(id);
+    }
+
+    @GetMapping("/{id}/spatial-analysis")
+    @PreAuthorize(SecurityExpressions.ANY_ROLE)
+    public SpatialAnalysisResponse getSpatialAnalysis(@PathVariable UUID id) {
+        return spatialAnalysisService.analyze(id);
     }
 
     @PostMapping

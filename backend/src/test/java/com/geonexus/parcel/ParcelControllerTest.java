@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.geonexus.common.dto.PagedResponse;
 import com.geonexus.common.error.GlobalExceptionHandler;
 import com.geonexus.common.error.ResourceNotFoundException;
+import com.geonexus.geometry.SpatialAnalysisService;
+import com.geonexus.geometry.dto.SpatialAnalysisResponse;
+import com.geonexus.geometry.dto.StationDisplacement;
 import com.geonexus.parcel.dto.CreateParcelRequest;
 import com.geonexus.parcel.dto.ParcelDetailResponse;
 import com.geonexus.parcel.dto.ParcelSummaryResponse;
@@ -52,6 +55,9 @@ class ParcelControllerTest {
 
     @Mock
     private ParcelService parcelService;
+
+    @Mock
+    private SpatialAnalysisService spatialAnalysisService;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -191,5 +197,26 @@ class ParcelControllerTest {
                         .content(mapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Updated Name"));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/parcels/{id}/spatial-analysis returns dossier")
+    void getSpatialAnalysis() throws Exception {
+        UUID id = UUID.randomUUID();
+        SpatialAnalysisResponse analysis = new SpatialAnalysisResponse(
+                id, "PR-2024-0412", 142850.0, 14.285, 144120.0, 14.412,
+                1270.0, 0.89, 1894.20, 18, true, 0.002, 0, 0,
+                List.of(), 0, 2.4, 1.1,
+                List.of(new StationDisplacement("ST-01", 80.4312, 16.3021, 80.431, 16.3024, 1.2))
+        );
+
+        when(spatialAnalysisService.analyze(id)).thenReturn(analysis);
+
+        mockMvc.perform(get("/api/v1/parcels/{id}/spatial-analysis", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.parcelCode").value("PR-2024-0412"))
+                .andExpect(jsonPath("$.recordedAreaHa").value(14.285))
+                .andExpect(jsonPath("$.perimeterM").value(1894.20))
+                .andExpect(jsonPath("$.isValidTopology").value(true));
     }
 }
