@@ -23,6 +23,7 @@ import org.springframework.web.context.WebApplicationContext;
 /** Health stays public and CORS-restricted once Spring Security is in front of it. */
 @SpringBootTest(classes = SecurityTestConfiguration.class, properties = {
         "spring.application.name=geonexus-backend",
+        "geonexus.cors.allowed-origins=http://localhost:5173",
         "geonexus.security.jwt.secret=" + TestKeys.SECRET,
         "geonexus.security.cors.allowed-origins=http://localhost:5173"
 })
