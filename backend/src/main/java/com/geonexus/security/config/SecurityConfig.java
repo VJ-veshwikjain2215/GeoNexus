@@ -7,6 +7,7 @@ import com.geonexus.security.jwt.JwtService;
 import com.geonexus.security.web.RestAccessDeniedHandler;
 import com.geonexus.security.web.RestAuthenticationEntryPoint;
 import java.time.Clock;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
@@ -62,7 +63,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
-                                                   CorsConfigurationSource corsSource,
+                                                   @Qualifier("corsConfigurationSource") CorsConfigurationSource corsSource,
                                                    JwtService jwtService,
                                                    UserAccountProvider accounts,
                                                    ApplicationEventPublisher events,

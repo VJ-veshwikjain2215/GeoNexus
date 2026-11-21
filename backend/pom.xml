@@ -29,6 +29,7 @@
     <!-- PostgisTestDatabase uses the Testcontainers 1.x API (org.testcontainers.containers.PostgreSQLContainer).
          Pinned so a future Spring Boot upgrade that manages Testcontainers 2.x does not silently break the tests. -->
     <testcontainers.version>1.21.3</testcontainers.version>
+    <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
   </properties>
 
   <dependencies>
@@ -119,6 +120,13 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <argLine>-javaagent:${settings.localRepository}/org/mockito/mockito-core/5.17.0/mockito-core-5.17.0.jar</argLine>
+        </configuration>
       </plugin>
     </plugins>
   </build>

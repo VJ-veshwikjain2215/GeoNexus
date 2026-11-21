@@ -1,6 +1,7 @@
 package com.geonexus.common.error;
 
 import com.geonexus.common.error.ApiError.FieldViolation;
+import com.geonexus.geometry.InvalidGeometryException;
 import com.geonexus.security.audit.SecurityAuditEvent;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
@@ -50,6 +51,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             builder.header(HttpHeaders.RETRY_AFTER, String.valueOf(Math.max(1, ex.getRetryAfter().toSeconds())));
         }
         return builder.body(body);
+    }
+
+    @ExceptionHandler(InvalidGeometryException.class)
+    public ResponseEntity<Object> handleInvalidGeometry(InvalidGeometryException ex, HttpServletRequest request) {
+        ApiError body = ApiError.of(HttpStatus.BAD_REQUEST, "INVALID_GEOMETRY", ex.getMessage(), request.getRequestURI());
+        return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON).body(body);
     }
 
     /** Thrown by method security ({@code @PreAuthorize}); must be handled here because MVC sees it first. */
