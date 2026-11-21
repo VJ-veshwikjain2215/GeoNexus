@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useTransition, useCallback } from 'react'
 import { BackendStatus } from './components/BackendStatus'
+import { LeafletParcelMap } from './components/LeafletParcelMap'
 import {
   geometryApi,
   parcelApi,
@@ -2424,9 +2425,9 @@ function MapView({
             <span>
               <b>
                 <span style={{ display: 'inline-block', width: '8px', height: '8px', background: '#e8dec8', border: '1px solid #ccba9e', marginRight: '4px' }} />
-                Drone Orthomosaic (Synthetic)
+                Aerial Imagery
               </b>
-              <small>10cm Ground Resolution Tile</small>
+              <small style={{ color: '#a03f24' }}>Not configured — unavailable</small>
             </span>
           </label>
 
@@ -2481,9 +2482,9 @@ function MapView({
           </div>
         </aside>
 
-        {/* CENTER VIEWPORT: Vector GIS Interactive Map Canvas */}
+        {/* CENTER VIEWPORT: OSM Leaflet GIS Interactive Map Canvas (MAP-ENH) */}
         <div className="viewport-container" style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-          <MapCanvas
+          <LeafletParcelMap
             recordedGeometry={recordedGeom}
             proposedGeometry={proposedGeom}
             aiDetectedGeometry={aiDetection?.detectedGeometry}
@@ -4543,7 +4544,19 @@ function NewParcelModal({
 }
 
 export default function App() {
-  const [view, setView] = useState<View>('dashboard')
+  const [view, setView] = useState<View>(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase()
+      if (['dashboard', 'map', 'parcel', 'boundary', 'reports', 'audit'].includes(hash)) {
+        return hash as View
+      }
+      const search = new URLSearchParams(window.location.search).get('view')?.toLowerCase()
+      if (search && ['dashboard', 'map', 'parcel', 'boundary', 'reports', 'audit'].includes(search)) {
+        return search as View
+      }
+    }
+    return 'dashboard'
+  })
   const [parcels, setParcels] = useState<DisplayParcel[]>(DEFAULT_PARCELS)
   const [selectedParcel, setSelectedParcel] = useState<DisplayParcel>(DEFAULT_PARCELS[0])
   const [searchQuery, setSearchQuery] = useState('')

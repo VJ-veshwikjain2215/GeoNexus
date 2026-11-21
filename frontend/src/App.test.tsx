@@ -269,7 +269,7 @@ describe('App shell', () => {
     expect(screen.getByText(/Parcel dossier:/)).toBeInTheDocument()
   })
 
-  it('renders dynamic SVG geometry paths from GeoJSON coordinates', async () => {
+  it('renders Leaflet map container with parcel geometry overlays in Map Workspace (MAP-ENH)', async () => {
     const detailWithGeom = {
       id: '00000000-0000-0000-0000-000000000001',
       parcelCode: 'PR-2024-0412',
@@ -333,15 +333,15 @@ describe('App shell', () => {
     await userEvent.click(screen.getByRole('button', { name: '⌑Map workspace' }))
     expect(screen.getByText('Parcel review canvas')).toBeInTheDocument()
 
-    // Verify SVG contains dynamic paths for recorded and proposed geometries
-    const svg = screen.getByRole('img', { name: /recorded and proposed parcel boundaries/i })
-    expect(svg).toBeInTheDocument()
-    const recordedPath = svg.querySelector('path.recorded')
-    const proposedPath = svg.querySelector('path.proposed')
-    expect(recordedPath).toBeInTheDocument()
-    expect(proposedPath).toBeInTheDocument()
-    expect(recordedPath?.getAttribute('d')).toMatch(/^M\s*\d+/)
-    expect(proposedPath?.getAttribute('d')).toMatch(/^M\s*\d+/)
+    // Verify the Leaflet map container is rendered (replaces legacy SVG basemap)
+    const leafletContainer = screen.getByTestId('leaflet-map-container')
+    expect(leafletContainer).toBeInTheDocument()
+    // Verify parcel label overlays are rendered on the map
+    expect(leafletContainer.querySelector('.map-label.one')).toBeInTheDocument()
+    // Verify OSM attribution footer is rendered
+    expect(leafletContainer.textContent).toMatch(/OpenStreetMap/)
+    // Verify honest disclaimer about synthetic data
+    expect(leafletContainer.textContent).toMatch(/Synthetic data/i)
   })
 
   it('renders graceful empty state when parcel has no recorded geometry', async () => {
@@ -486,7 +486,7 @@ describe('App shell', () => {
     expect(revokeObjectURLSpy).toHaveBeenCalled()
   })
 
-  it('controls map zoom and scale bar dynamically in Map Workspace', async () => {
+  it('renders Leaflet map zoom controls and fit-to-parcels in Map Workspace (MAP-ENH)', async () => {
     mockFetch((url) => {
       if (url.includes('/health')) return Promise.resolve(Response.json(healthBody))
       if (url.includes('/parcels/00000000-0000-0000-0000-000000000001')) {
@@ -502,25 +502,22 @@ describe('App shell', () => {
     await userEvent.click(screen.getByRole('button', { name: '⌑Map workspace' }))
     expect(screen.getByText('Parcel review canvas')).toBeInTheDocument()
 
-    // Default scale
-    expect(await screen.findByText('SCALE 1:2500')).toBeInTheDocument()
-
-    // Zoom in (+0.25 => 1.25 => 2500/1.25 = 2000)
+    // Leaflet map zoom controls are present
     const zoomInBtn = screen.getByRole('button', { name: 'Zoom in' })
-    await userEvent.click(zoomInBtn)
-    expect(screen.getByText('SCALE 1:2000')).toBeInTheDocument()
-
-    // Zoom out (-0.25 => 1.0 => 2500, then again => 0.75 => 2500/0.75 = 3333)
     const zoomOutBtn = screen.getByRole('button', { name: 'Zoom out' })
-    await userEvent.click(zoomOutBtn)
-    expect(screen.getByText('SCALE 1:2500')).toBeInTheDocument()
-    await userEvent.click(zoomOutBtn)
-    expect(screen.getByText('SCALE 1:3333')).toBeInTheDocument()
-
-    // Fit extent resets to 1.0
     const fitBtn = screen.getByRole('button', { name: 'Fit extent' })
+    expect(zoomInBtn).toBeInTheDocument()
+    expect(zoomOutBtn).toBeInTheDocument()
+    expect(fitBtn).toBeInTheDocument()
+
+    // Clicking zoom controls does not throw
+    await userEvent.click(zoomInBtn)
+    await userEvent.click(zoomOutBtn)
     await userEvent.click(fitBtn)
-    expect(screen.getByText('SCALE 1:2500')).toBeInTheDocument()
+
+    // OSM basemap renders in Leaflet map container
+    const mapContainer = screen.getByTestId('leaflet-map-container')
+    expect(mapContainer).toBeInTheDocument()
   })
 
   it('toggles spatial layers and updates active layer badge in Map Workspace', async () => {
@@ -552,7 +549,7 @@ describe('App shell', () => {
     expect(screen.getByText('5 ACTIVE')).toBeInTheDocument()
   })
 
-  it('toggles distance measurement caliper display with dynamic measurement in Map Workspace (MAP-01)', async () => {
+  it('renders LeafletParcelMap AI Detect and boundary controls in Map Workspace (MAP-01)', async () => {
     mockFetch((url) => {
       if (url.includes('/health')) return Promise.resolve(Response.json(healthBody))
       if (url.includes('/parcels/00000000-0000-0000-0000-000000000001')) {
@@ -567,19 +564,17 @@ describe('App shell', () => {
     render(<App />)
     await userEvent.click(screen.getByRole('button', { name: '⌑Map workspace' }))
 
-    // Measurement vector readout is present initially with dynamic meter formatting
-    const caliperBtn = screen.getByRole('button', { name: 'Distance measurement' })
-    expect(caliperBtn).toBeInTheDocument()
-    expect(caliperBtn.textContent).toMatch(/(\d+\.\d+)\s*m/)
+    // LeafletParcelMap HUD toolbar renders with boundary edit and AI detect buttons
+    const aiDetectBtn = screen.getByRole('button', { name: 'AI Boundary Detection' })
+    expect(aiDetectBtn).toBeInTheDocument()
+    expect(aiDetectBtn.textContent).toMatch(/AI Detect/)
 
-    // Click caliper button to toggle OFF
-    await userEvent.click(caliperBtn)
-    const svg = screen.getByRole('img', { name: /recorded and proposed parcel boundaries/i })
-    expect(svg.querySelector('.measurement-vector')).toBeNull()
+    // Leaflet map container is present
+    const mapContainer = screen.getByTestId('leaflet-map-container')
+    expect(mapContainer).toBeInTheDocument()
 
-    // Click caliper button to toggle ON again
-    await userEvent.click(caliperBtn)
-    expect(svg.querySelector('.measurement-vector')).not.toBeNull()
+    // OSM attribution footer is present confirming real tile basemap
+    expect(mapContainer.textContent).toMatch(/OpenStreetMap/)
   })
 
   it('renders authentic UTM Easting and Northing coordinates in station table (GEO-06)', async () => {
