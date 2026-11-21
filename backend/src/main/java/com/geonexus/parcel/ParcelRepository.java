@@ -27,6 +27,17 @@ public interface ParcelRepository extends JpaRepository<Parcel, UUID>, JpaSpecif
 
     Page<Parcel> findByDistrictAndStatus(String district, ParcelStatus status, Pageable pageable);
 
+    long countByStatus(ParcelStatus status);
+
+    @Query("select count(p) from Parcel p")
+    long countTotal();
+
+    @Query("select p.district, count(p) from Parcel p group by p.district")
+    java.util.List<Object[]> countByDistrictGrouped();
+
+    @Query("select p.landUse, count(p) from Parcel p group by p.landUse")
+    java.util.List<Object[]> countByLandUseGrouped();
+
     /**
      * Row lock used before creating a new geometry version, so concurrent resurveys of one parcel
      * serialise (the database trigger takes the same lock).
