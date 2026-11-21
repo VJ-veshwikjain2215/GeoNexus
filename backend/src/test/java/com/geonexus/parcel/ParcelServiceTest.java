@@ -76,7 +76,7 @@ class ParcelServiceTest {
         Parcel p = new Parcel("PR-2024-001", "Guntur", "Andhra Pradesh", testUser, testUser);
         when(parcelRepository.findAll(any(Specification.class), any(PageRequest.class)))
                 .thenReturn(new PageImpl<>(List.of(p)));
-        when(parcelGeometryRepository.findCurrent(p.getId())).thenReturn(Optional.empty());
+        when(parcelGeometryRepository.findCurrentByParcelIds(any())).thenReturn(List.of());
 
         PagedResponse<ParcelSummaryResponse> result =
                 parcelService.listParcels(new ParcelFilterParams(null, null, null, null, null), PageRequest.of(0, 10));

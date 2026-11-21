@@ -29,6 +29,10 @@ public interface ParcelGeometryRepository extends JpaRepository<ParcelGeometry, 
     @Query("select g from ParcelGeometry g where g.parcel.id = :parcelId and g.status = com.geonexus.geometry.GeometryStatus.VERIFIED")
     Optional<ParcelGeometry> findCurrent(@Param("parcelId") UUID parcelId);
 
+    /** The current authoritative boundaries for a collection of parcel IDs (batch query to avoid N+1). */
+    @Query("select g from ParcelGeometry g where g.parcel.id in :parcelIds and g.status = com.geonexus.geometry.GeometryStatus.VERIFIED")
+    List<ParcelGeometry> findCurrentByParcelIds(@Param("parcelIds") java.util.Collection<UUID> parcelIds);
+
     @Query("select g from ParcelGeometry g where g.parcel.id = :parcelId and g.status = com.geonexus.geometry.GeometryStatus.PROPOSED order by g.versionNo")
     List<ParcelGeometry> findPending(@Param("parcelId") UUID parcelId);
 
@@ -49,7 +53,7 @@ public interface ParcelGeometryRepository extends JpaRepository<ParcelGeometry, 
     @Query("select g from ParcelGeometry g where g.status = com.geonexus.geometry.GeometryStatus.VERIFIED")
     List<ParcelGeometry> findAllVerified();
 
-    @Query("select g from ParcelGeometry g where g.status = com.geonexus.geometry.GeometryStatus.PROPOSED order by g.createdAt desc")
+    @Query("select g from ParcelGeometry g left join fetch g.basedOn where g.status = com.geonexus.geometry.GeometryStatus.PROPOSED order by g.createdAt desc")
     List<ParcelGeometry> findAllPending();
 
     @Query("select g.status, count(g) from ParcelGeometry g group by g.status")

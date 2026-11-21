@@ -339,6 +339,28 @@ function MapCanvas({
   const [showMeasure, setShowMeasure] = useState(true)
   const [selectedStations, setSelectedStations] = useState<[number, number]>([0, 1])
 
+  const { recordedRings, proposedRings, isEmpty, bbox, recordedProj, proposedProj, aiProj } = useMemo(() => {
+    const recRings = extractRingsFromGeoJson(recordedGeometry)
+    const propRings = extractRingsFromGeoJson(proposedGeometry)
+    const aiRings = aiDetectedGeometry ? extractRingsFromGeoJson(aiDetectedGeometry) : []
+
+    const empty = recRings.length === 0 && propRings.length === 0 && aiRings.length === 0
+    const box = getBoundingBox([recRings, propRings, aiRings]) || [80.43, 16.297, 80.436, 16.303]
+    const recProj = projectRingsToSvg(recRings, box, 1200, 800, 100)
+    const propProj = projectRingsToSvg(propRings, box, 1200, 800, 100)
+    const aProj = projectRingsToSvg(aiRings, box, 1200, 800, 100)
+
+    return {
+      recordedRings: recRings,
+      proposedRings: propRings,
+      isEmpty: empty,
+      bbox: box,
+      recordedProj: recProj,
+      proposedProj: propProj,
+      aiProj: aProj,
+    }
+  }, [recordedGeometry, proposedGeometry, aiDetectedGeometry])
+
   if (isLoading) {
     return (
       <div className="map-canvas" aria-label="Loading parcel map">
@@ -375,11 +397,7 @@ function MapCanvas({
     )
   }
 
-  const recordedRings = extractRingsFromGeoJson(recordedGeometry)
-  const proposedRings = extractRingsFromGeoJson(proposedGeometry)
-  const aiRings = aiDetectedGeometry ? extractRingsFromGeoJson(aiDetectedGeometry) : []
-
-  if (recordedRings.length === 0 && proposedRings.length === 0 && aiRings.length === 0) {
+  if (isEmpty) {
     return (
       <div className="map-canvas" aria-label="Empty parcel boundary map">
         <div className="map-grid" />
@@ -405,11 +423,6 @@ function MapCanvas({
       </div>
     )
   }
-
-  const bbox = getBoundingBox([recordedRings, proposedRings, aiRings]) || [80.43, 16.297, 80.436, 16.303]
-  const recordedProj = projectRingsToSvg(recordedRings, bbox, 1200, 800, 100)
-  const proposedProj = projectRingsToSvg(proposedRings, bbox, 1200, 800, 100)
-  const aiProj = projectRingsToSvg(aiRings, bbox, 1200, 800, 100)
 
   const activeVertices =
     comparison && proposedProj.vertices.length > 0

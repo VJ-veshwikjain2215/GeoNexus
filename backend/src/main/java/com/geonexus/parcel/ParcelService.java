@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -62,11 +63,17 @@ public class ParcelService {
     public PagedResponse<ParcelSummaryResponse> listParcels(ParcelFilterParams params, Pageable pageable) {
         Page<Parcel> page = parcelRepository.findAll(ParcelSpecifications.withFilters(params), pageable);
 
+        List<UUID> parcelIds = page.getContent().stream().map(Parcel::getId).toList();
+        Map<UUID, ParcelGeometry> verifiedByParcelId = parcelIds.isEmpty()
+                ? Map.of()
+                : parcelGeometryRepository.findCurrentByParcelIds(parcelIds).stream()
+                .collect(Collectors.toMap(g -> g.getParcel().getId(), g -> g, (g1, g2) -> g1));
+
         List<ParcelSummaryResponse> summaries = page.getContent().stream()
                 .map(p -> {
-                    Optional<ParcelGeometry> cur = parcelGeometryRepository.findCurrent(p.getId());
-                    Double area = cur.map(ParcelGeometry::getAreaSqM).orElse(null);
-                    Integer ver = cur.map(ParcelGeometry::getVersionNo).orElse(null);
+                    ParcelGeometry cur = verifiedByParcelId.get(p.getId());
+                    Double area = cur != null ? cur.getAreaSqM() : null;
+                    Integer ver = cur != null ? cur.getVersionNo() : null;
                     return ParcelSummaryResponse.from(p, area, ver);
                 })
                 .toList();
@@ -109,11 +116,18 @@ public class ParcelService {
         ParcelFilterParams params = new ParcelFilterParams(status, district, null, null, null);
         List<Parcel> parcels = parcelRepository.findAll(ParcelSpecifications.withFilters(params));
 
+        if (parcels.isEmpty()) {
+            return new GeoJsonFeatureCollection<>(List.of());
+        }
+
+        List<UUID> parcelIds = parcels.stream().map(Parcel::getId).toList();
+        Map<UUID, ParcelGeometry> verifiedByParcelId = parcelGeometryRepository.findCurrentByParcelIds(parcelIds).stream()
+                .collect(Collectors.toMap(g -> g.getParcel().getId(), g -> g, (g1, g2) -> g1));
+
         List<GeoJsonFeature<ParcelProperties>> features = new ArrayList<>();
         for (Parcel p : parcels) {
-            Optional<ParcelGeometry> curOpt = parcelGeometryRepository.findCurrent(p.getId());
-            if (curOpt.isPresent()) {
-                ParcelGeometry cur = curOpt.get();
+            ParcelGeometry cur = verifiedByParcelId.get(p.getId());
+            if (cur != null) {
                 ParcelProperties props = ParcelProperties.from(p, cur.getAreaSqM(), cur.getVersionNo());
                 features.add(new GeoJsonFeature<>(p.getId().toString(), GeoJsonConverter.toGeoJson(cur.getGeom()), props));
             }
