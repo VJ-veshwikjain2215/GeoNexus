@@ -28,6 +28,44 @@ const parcelsBody = {
   last: true
 }
 
+const multiParcelsBody = {
+  content: [
+    {
+      id: '00000000-0000-0000-0000-000000000001',
+      parcelCode: 'PR-2024-0412',
+      name: 'Kothapeta Block 3',
+      village: 'Kothapeta',
+      district: 'Guntur',
+      state: 'Andhra Pradesh',
+      landUse: 'AGRICULTURAL',
+      status: 'DRAFT',
+      currentAreaSqM: 142850.0,
+      currentVersionNo: 1,
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z'
+    },
+    {
+      id: '00000000-0000-0000-0000-000000000002',
+      parcelCode: 'PR-2024-0389',
+      name: 'Mylavaram Sector 1',
+      village: 'Mylavaram',
+      district: 'NTR',
+      state: 'Andhra Pradesh',
+      landUse: 'AGRICULTURAL',
+      status: 'ACTIVE',
+      currentAreaSqM: 81000.0,
+      currentVersionNo: 1,
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z'
+    }
+  ],
+  page: 0,
+  size: 10,
+  totalElements: 2,
+  totalPages: 1,
+  last: true
+}
+
 function mockFetch(impl: (url: string) => Promise<Response>) {
   const fn = vi.fn(impl)
   vi.stubGlobal('fetch', fn)
@@ -218,5 +256,103 @@ describe('App shell', () => {
     await userEvent.click(screen.getByRole('button', { name: '⌑Map workspace' }))
     expect(await screen.findByText('⚠ Geometry Loading Error')).toBeInTheDocument()
     expect(screen.getByText('PostGIS service unreachable')).toBeInTheDocument()
+  })
+
+  it('clearly labels static dashboard metrics and activity as demonstration data', async () => {
+    mockFetch((url) => {
+      if (url.includes('/health')) return Promise.resolve(Response.json(healthBody))
+      return Promise.resolve(Response.json(parcelsBody))
+    })
+
+    render(<App />)
+    expect(await screen.findByText('Backend is reachable')).toBeInTheDocument()
+
+    // Dashboard metrics
+    expect(screen.getByRole('region', { name: /Demonstration operations metrics/i })).toBeInTheDocument()
+    expect(screen.getByText('14 awaiting review (simulated)')).toBeInTheDocument()
+    const demoTags = screen.getAllByText('[Demo]')
+    expect(demoTags.length).toBeGreaterThanOrEqual(4)
+
+    // Activity feed
+    expect(screen.getByText('[Demonstration activity log]')).toBeInTheDocument()
+    expect(screen.getByText(/PR-2024-0412 demonstration traverse/i)).toBeInTheDocument()
+  })
+
+  it('dynamically filters parcels with global search and displays empty state and clear button', async () => {
+    mockFetch((url) => {
+      if (url.includes('/health')) return Promise.resolve(Response.json(healthBody))
+      return Promise.resolve(Response.json(multiParcelsBody))
+    })
+
+    render(<App />)
+    expect(await screen.findByText('Backend is reachable')).toBeInTheDocument()
+    expect(await screen.findByText('PR-2024-0412')).toBeInTheDocument()
+    expect(screen.getByText('PR-2024-0389')).toBeInTheDocument()
+
+    const searchInput = screen.getByLabelText('Search parcels')
+
+    // Filter to Mylavaram
+    await userEvent.type(searchInput, 'Mylavaram')
+    expect(screen.getByText('PR-2024-0389')).toBeInTheDocument()
+    expect(screen.queryByText('PR-2024-0412')).not.toBeInTheDocument()
+    expect(screen.getByText('Filtered queue (1 match)')).toBeInTheDocument()
+
+    // Filter to non-matching string
+    await userEvent.clear(searchInput)
+    await userEvent.type(searchInput, 'NonExistentLocality')
+    expect(screen.getByText('No parcels found matching your search.')).toBeInTheDocument()
+    expect(screen.getByText('Filtered queue (0 matches)')).toBeInTheDocument()
+
+    // Clear search using clear button
+    const clearButton = screen.getByRole('button', { name: 'Clear search' })
+    await userEvent.click(clearButton)
+    expect(searchInput).toHaveValue('')
+    expect(screen.getByText('PR-2024-0412')).toBeInTheDocument()
+    expect(screen.getByText('PR-2024-0389')).toBeInTheDocument()
+  })
+
+  it('navigates to parcel view when Enter key is pressed in search input', async () => {
+    mockFetch((url) => {
+      if (url.includes('/health')) return Promise.resolve(Response.json(healthBody))
+      if (url.includes('/parcels/00000000-0000-0000-0000-000000000002')) {
+        return Promise.resolve(Response.json(multiParcelsBody.content[1]))
+      }
+      if (url.includes('/parcels/00000000-0000-0000-0000-000000000001')) {
+        return Promise.resolve(Response.json(multiParcelsBody.content[0]))
+      }
+      if (url.includes('/geometries')) {
+        return Promise.resolve(Response.json([]))
+      }
+      return Promise.resolve(Response.json(multiParcelsBody))
+    })
+
+    render(<App />)
+    expect(await screen.findByText('Backend is reachable')).toBeInTheDocument()
+
+    const searchInput = screen.getByLabelText('Search parcels')
+    await userEvent.type(searchInput, 'PR-2024-0389{enter}')
+
+    // Verify view shifted to parcel inspection dossier
+    expect(await screen.findByText(/Parcel dossier: PR-2024-0389/i)).toBeInTheDocument()
+  })
+
+  it('exports vertex change ledger as CSV when Export CSV is clicked in Boundary review', async () => {
+    mockFetch((url) => {
+      if (url.includes('/health')) return Promise.resolve(Response.json(healthBody))
+      return Promise.resolve(Response.json(parcelsBody))
+    })
+
+    const createObjectURLSpy = vi.spyOn(URL, 'createObjectURL')
+    const revokeObjectURLSpy = vi.spyOn(URL, 'revokeObjectURL')
+
+    render(<App />)
+    await userEvent.click(screen.getByRole('button', { name: '◫Boundary review' }))
+    expect(screen.getByText('Vertex change ledger')).toBeInTheDocument()
+
+    const exportBtn = screen.getByRole('button', { name: 'Export vertex ledger as CSV' })
+    await userEvent.click(exportBtn)
+
+    expect(createObjectURLSpy).toHaveBeenCalled()
+    expect(revokeObjectURLSpy).toHaveBeenCalled()
   })
 })

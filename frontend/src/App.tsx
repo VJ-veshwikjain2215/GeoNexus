@@ -1,4 +1,4 @@
-import { useEffect, useState, useTransition } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import { BackendStatus } from './components/BackendStatus'
 import {
   geometryApi,
@@ -434,28 +434,43 @@ function ParcelTable({
         <span>Status</span>
         <span />
       </div>
-      {parcels.map((p) => (
-        <div className="row" key={p.id}>
-          <b>{p.code}</b>
-          <span>{p.locality}</span>
-          <span>{p.area}</span>
-          <span>
-            <em className={`status ${p.status === 'Active' || p.status === 'ACTIVE' ? 'valid' : ''}`}>
-              ◐ {p.status}
-            </em>
-          </span>
-          <button
-            className="arrow"
-            aria-label={`Inspect ${p.code}`}
-            onClick={() => {
-              if (onSelect) onSelect(p.id)
-              go('parcel')
-            }}
-          >
-            →
-          </button>
+      {parcels.length === 0 ? (
+        <div
+          className="row"
+          style={{
+            gridTemplateColumns: '1fr',
+            textAlign: 'center',
+            color: '#6e625d',
+            padding: '16px',
+            fontStyle: 'italic'
+          }}
+        >
+          No parcels found matching your search.
         </div>
-      ))}
+      ) : (
+        parcels.map((p) => (
+          <div className="row" key={p.id}>
+            <b>{p.code}</b>
+            <span>{p.locality}</span>
+            <span>{p.area}</span>
+            <span>
+              <em className={`status ${p.status === 'Active' || p.status === 'ACTIVE' ? 'valid' : ''}`}>
+                ◐ {p.status}
+              </em>
+            </span>
+            <button
+              className="arrow"
+              aria-label={`Inspect ${p.code}`}
+              onClick={() => {
+                if (onSelect) onSelect(p.id)
+                go('parcel')
+              }}
+            >
+              →
+            </button>
+          </div>
+        ))
+      )}
     </div>
   )
 }
@@ -464,12 +479,14 @@ function Dashboard({
   parcels,
   go,
   onNewParcel,
-  onSelectParcel
+  onSelectParcel,
+  searchQuery
 }: {
   parcels: DisplayParcel[]
   go: (v: View) => void
   onNewParcel: () => void
   onSelectParcel: (id: string) => void
+  searchQuery?: string
 }) {
   return (
     <>
@@ -492,24 +509,44 @@ function Dashboard({
         </div>
       </section>
 
-      <section className="metrics">
+      <section className="metrics" aria-label="Demonstration operations metrics">
         <article>
-          <p>Active resurveys</p>
+          <p>
+            Active resurveys{' '}
+            <small style={{ textTransform: 'none', color: '#a03f24', fontSize: '9px', fontWeight: 600 }}>
+              [Demo]
+            </small>
+          </p>
           <strong>42</strong>
-          <span>14 awaiting review</span>
+          <span>14 awaiting review (simulated)</span>
         </article>
         <article>
-          <p>Flagged for review</p>
+          <p>
+            Flagged for review{' '}
+            <small style={{ textTransform: 'none', color: '#a03f24', fontSize: '9px', fontWeight: 600 }}>
+              [Demo]
+            </small>
+          </p>
           <strong className="orange">18 parcels</strong>
           <span>Area or boundary variance</span>
         </article>
         <article>
-          <p>Validated this month</p>
+          <p>
+            Validated this month{' '}
+            <small style={{ textTransform: 'none', color: '#a03f24', fontSize: '9px', fontWeight: 600 }}>
+              [Demo]
+            </small>
+          </p>
           <strong>184</strong>
           <span>Geometry checks passed</span>
         </article>
         <article>
-          <p>Open audit items</p>
+          <p>
+            Open audit items{' '}
+            <small style={{ textTransform: 'none', color: '#a03f24', fontSize: '9px', fontWeight: 600 }}>
+              [Demo]
+            </small>
+          </p>
           <strong>9</strong>
           <span>Reviewer action required</span>
         </article>
@@ -519,7 +556,11 @@ function Dashboard({
         <article className="panel">
           <div className="panel-title">
             <div>
-              <p className="eyebrow">Priority queue</p>
+              <p className="eyebrow">
+                {searchQuery
+                  ? `Filtered queue (${parcels.length} match${parcels.length === 1 ? '' : 'es'})`
+                  : 'Priority queue'}
+              </p>
               <h2>Parcels pending boundary review</h2>
             </div>
             <button className="text-button" onClick={() => go('boundary')}>
@@ -542,30 +583,41 @@ function Dashboard({
             <p className="eyebrow">Traceability</p>
             <h2>Recent project activity</h2>
           </div>
-          <small>Phase 4 API connected</small>
+          <small style={{ font: '10px "JetBrains Mono", monospace', color: '#6e625d' }}>
+            [Demonstration activity log]
+          </small>
         </div>
         <ol>
           <li>
             <i />
             <div>
-              <b>Boundary adjustment proposed</b>
-              <p>PR-2024-0412 was submitted for reviewer assessment.</p>
+              <b>
+                Boundary adjustment proposed{' '}
+                <small style={{ color: '#a03f24', fontWeight: 600 }}>[Demo]</small>
+              </b>
+              <p>PR-2024-0412 demonstration traverse submitted for reviewer assessment.</p>
             </div>
             <time>Today, 14:22</time>
           </li>
           <li>
             <i />
             <div>
-              <b>Geometry validation completed</b>
-              <p>Topology checks completed for the Kothapeta batch.</p>
+              <b>
+                Geometry validation completed{' '}
+                <small style={{ color: '#a03f24', fontWeight: 600 }}>[Demo]</small>
+              </b>
+              <p>Topology checks completed for the Kothapeta demonstration batch.</p>
             </div>
             <time>Today, 11:05</time>
           </li>
           <li>
             <i />
             <div>
-              <b>Baseline geometry imported</b>
-              <p>Authorized demonstration geometry was added.</p>
+              <b>
+                Baseline geometry imported{' '}
+                <small style={{ color: '#a03f24', fontWeight: 600 }}>[Demo]</small>
+              </b>
+              <p>Authorized demonstration reference geometry was registered.</p>
             </div>
             <time>12 Oct</time>
           </li>
@@ -592,7 +644,7 @@ function MapView({
   go: (v: View) => void
   onInitiateResurvey: () => void
 }) {
-  const code = parcelDetail ? parcelDetail.parcelCode : selectedParcel.code
+  const code = parcelDetail?.parcelCode || selectedParcel.code
   const locality = parcelDetail
     ? `${parcelDetail.village || 'Village'}, ${parcelDetail.district}`
     : selectedParcel.locality
@@ -707,7 +759,7 @@ function ParcelView({
   go: (v: View) => void
   onProposeGeometry: () => void
 }) {
-  const code = parcelDetail ? parcelDetail.parcelCode : selectedParcel.code
+  const code = parcelDetail?.parcelCode || selectedParcel.code
   const locality = parcelDetail
     ? `${parcelDetail.village || 'Village'}, ${parcelDetail.district}`
     : selectedParcel.locality
@@ -908,7 +960,7 @@ function BoundaryView({
   const [tab, setTab] = useState<'overlay' | 'side' | 'variance'>('overlay')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const code = parcelDetail ? parcelDetail.parcelCode : selectedParcel.code
+  const code = parcelDetail?.parcelCode || selectedParcel.code
   const locality = parcelDetail
     ? `${parcelDetail.village || 'Village'}, ${parcelDetail.district}`
     : selectedParcel.locality
@@ -958,6 +1010,48 @@ function BoundaryView({
       await onRequestResurvey(decisionNotes)
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleExportCsv = () => {
+    const rowsToExport =
+      ledgerRows.length > 0
+        ? ledgerRows
+        : [
+            {
+              node: 'ST-01',
+              existing: 'No shift data',
+              proposed: 'Awaiting resurvey',
+              shift: '—'
+            }
+          ]
+
+    const headers = ['Node', 'Existing_Coordinates', 'Proposed_Coordinates', 'Shift_Distance']
+    const csvLines = [
+      headers.join(','),
+      ...rowsToExport.map((r) =>
+        [
+          `"${r.node}"`,
+          `"${r.existing}"`,
+          `"${r.proposed}"`,
+          `"${r.shift}"`
+        ].join(',')
+      )
+    ]
+    const csvContent = csvLines.join('\r\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const filename = `${code}_vertex_change_ledger.csv`
+
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.setAttribute('href', url)
+      link.setAttribute('download', filename)
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
     }
   }
 
@@ -1014,7 +1108,14 @@ function BoundaryView({
           <article className="panel ledger">
             <div className="panel-title">
               <h2>Vertex change ledger</h2>
-              <button className="text-button">Export CSV</button>
+              <button
+                type="button"
+                className="text-button"
+                onClick={handleExportCsv}
+                aria-label="Export vertex ledger as CSV"
+              >
+                Export CSV
+              </button>
             </div>
             <div className="table compact">
               <div className="table-head">
@@ -1260,6 +1361,7 @@ export default function App() {
   const [view, setView] = useState<View>('dashboard')
   const [parcels, setParcels] = useState<DisplayParcel[]>(DEFAULT_PARCELS)
   const [selectedParcel, setSelectedParcel] = useState<DisplayParcel>(DEFAULT_PARCELS[0])
+  const [searchQuery, setSearchQuery] = useState('')
   const [parcelDetail, setParcelDetail] = useState<ParcelDetail | null>(null)
   const [geometryHistory, setGeometryHistory] = useState<GeometryResponse[]>([])
   const [isLoadingGeometry, setIsLoadingGeometry] = useState(false)
@@ -1268,6 +1370,50 @@ export default function App() {
   const [userRole, setUserRole] = useState<'REVIEWER' | 'SURVEYOR'>('REVIEWER')
   const [actionStatus, setActionStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [, startTransition] = useTransition()
+
+  const filteredParcels = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    if (!q) return parcels
+    return parcels.filter(
+      (p) =>
+        p.code.toLowerCase().includes(q) ||
+        p.locality.toLowerCase().includes(q) ||
+        p.status.toLowerCase().includes(q)
+    )
+  }, [parcels, searchQuery])
+
+  // Debounced backend search against /api/v1/parcels?search=...
+  useEffect(() => {
+    const query = searchQuery.trim()
+    if (!query) return
+
+    const timer = setTimeout(() => {
+      parcelApi
+        .list({ search: query, size: 20 })
+        .then((res) => {
+          if (res && res.content && res.content.length > 0) {
+            const loaded: DisplayParcel[] = res.content.map((p: ParcelSummary) => ({
+              id: p.id,
+              code: p.parcelCode,
+              locality: p.village ? `${p.village}, ${p.district}` : p.district,
+              area: p.currentAreaSqM ? `${(p.currentAreaSqM / 10000).toFixed(3)} ha` : 'Pending boundary',
+              status: p.status,
+              isLive: true
+            }))
+            setParcels((prev) => {
+              const existingIds = new Set(prev.map((p) => p.id))
+              const newItems = loaded.filter((p) => !existingIds.has(p.id))
+              return [...newItems, ...prev]
+            })
+          }
+        })
+        .catch(() => {
+          // Fall back gracefully to client-side filtering
+        })
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
 
   // Load parcels from Phase 4 API on mount
   useEffect(() => {
@@ -1500,13 +1646,14 @@ export default function App() {
   const body =
     view === 'dashboard' ? (
       <Dashboard
-        parcels={parcels}
+        parcels={filteredParcels}
         go={go}
         onNewParcel={() => setIsModalOpen(true)}
         onSelectParcel={(id) => {
           const found = parcels.find((p) => p.id === id)
           if (found) setSelectedParcel(found)
         }}
+        searchQuery={searchQuery}
       />
     ) : view === 'map' ? (
       <MapView
@@ -1579,7 +1726,35 @@ export default function App() {
             <input
               aria-label="Search parcels"
               placeholder="Search parcel ID, survey number, or locality"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && filteredParcels.length > 0) {
+                  e.preventDefault()
+                  setSelectedParcel(filteredParcels[0])
+                  go('parcel')
+                }
+              }}
             />
+            {searchQuery && (
+              <button
+                type="button"
+                aria-label="Clear search"
+                onClick={() => setSearchQuery('')}
+                style={{
+                  border: 0,
+                  background: 'transparent',
+                  color: '#6e625d',
+                  cursor: 'pointer',
+                  padding: '2px 6px',
+                  fontSize: '14px',
+                  lineHeight: 1,
+                  flexShrink: 0
+                }}
+              >
+                ✕
+              </button>
+            )}
           </label>
           <span className="location">◉ District 4 · Academic demonstration zone</span>
           <button
