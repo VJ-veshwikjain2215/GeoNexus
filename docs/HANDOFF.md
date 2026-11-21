@@ -1,108 +1,61 @@
 # GeoNexus – Handoff
 
-**Current state:** Phase 1 (application foundation) and Phase 2 (data layer) are integrated into one repository.
-**Phase 3 (security) merged but unverified** (see 'Phase 3 merge' below). Not started: every later phase.
-**Not started:** Phase 3 (authentication/authorization) and every later phase.
-**Not fully verified:** the Java build and the Flyway/JPA runtime could not be run in the integration session (see below).
+## Current state
 
-## What is in the repository
+Phases 1–3 are integrated: Spring Boot and React foundations, PostgreSQL/PostGIS Flyway
+migrations and entities, plus JWT authentication and role-based security. The frontend now
+contains the implemented Stitch-informed academic GIS workspace for dashboard, map, parcel,
+and boundary-review demonstration screens. It intentionally uses static demonstration data until
+the parcel API is implemented.
 
-- `backend/` – Spring Boot 3.5.7 / Java 21 / Maven, base package `com.geonexus`.
-  - Phase 1: `GET /api/v1/health`, env-driven datasource, restrictive read-only CORS, safe error settings, MockMvc tests.
-  - Phase 2: Flyway migrations `V1`–`V6` (PostGIS, users/roles, parcels, surveys, audit, parcel geometries), JPA entities and
-    repositories (`user`, `parcel`, `survey`, `geometry`, `audit`, `common`), `GeometryPolicy` (CRS/SRID rules), database and
-    unit tests, `scripts/validate-sql.sh`.
-- `frontend/` – React 19 / TypeScript / Vite / Tailwind shell with a backend-status panel (unchanged from Phase 1).
-- `docker-compose.yml` – PostgreSQL 16 + PostGIS 3.5, loopback-only port.
-- `.env.example` – the single environment contract (Phase 2 added only optional, commented `GEONEXUS_TEST_DB_*` test variables).
-- `docs/` – `architecture.md`, `data-model.md` (schema + CRS policy), `setup.md` (run/check/config), this file.
+## Completed
 
-## Integration decisions
+- `backend/`: Spring Boot 3.5.7 / Java 21, health endpoint, PostGIS model and migrations `V1`–`V6`.
+- Security: BCrypt password verification, JWT issue/validation, protected API default, explicit CORS,
+  DTO validation, safe API error handlers, login rate limiter, and Phase 3 tests.
+- `frontend/`: React/TypeScript/Vite UI based on the completed Stitch design. It uses academic-review
+  language, does not imply legal certification, and presents GeoJSON storage as EPSG:4326 consistently.
+- Spatial policy: stored GeoJSON is EPSG:4326. Area, distance, and perimeter must be measured in a
+  suitable projected CRS or PostGIS geography, never directly in longitude/latitude degrees.
 
-| Topic | Decision |
-|---|---|
-| Source layout | Phase 1 `backend/`, `frontend/`, `docker-compose.yml` placed at the repo root; Phase 2 files merged into `backend/` with no overwrites (collision check found none). Workstream folders and their `INTEGRATION.md` files are not carried over. |
-| Package names | Both use `com.geonexus`; Phase 2 packages do not overlap Phase 1 (`config`, `health`). No `@EntityScan`/`@EnableJpaRepositories` needed. |
-| Flyway history | One history in `backend/src/main/resources/db/migration`. Phase 1 had no migrations, so Phase 2 keeps `V1`–`V6` unrenumbered. |
-| Dependencies | Added to the existing `pom.xml`: `hibernate-spatial`, `flyway-core`, `flyway-database-postgresql` (all Boot-managed), `jts-core` 1.20.0 (`jts.version`), Testcontainers `postgresql` + `junit-jupiter` (test, `testcontainers.version` 1.21.3 pinned for the 1.x API the tests use). Spring Boot parent stays defined once (3.5.7). |
-| Database config | Phase 1 `application.yml` already had `ddl-auto: none` and `open-in-view: false`; added `spring.flyway.enabled=true` and `locations`. Datasource variables unchanged (`DB_*`). |
-| PostGIS version | Compose uses `16-3.5`; Phase 2 tests used `16-3.4`. Test image changed to `16-3.5` so tests and local runtime match. Phase 2's SQL was validated on PostGIS 3.4 (3.4.2 by its authors, 3.4.3 here). |
-| Environment variables | One contract. No renames were needed. |
-| Docs | Phase 1's package README (`docs/phase-1-foundation.md`) was folded into `docs/setup.md` (no duplicate config docs); Phase 2's `data-model.md` kept as `docs/data-model.md` with stale references fixed; `dependency-additions.md` merged into `pom.xml` and dropped. |
-| Base repository | The upload also contained `GeoNexus-main.zip` (baseline) and `GeoNexus-phase1-integrated.zip` (baseline + Phase 1). The latter's `backend/`, `frontend/`, `docker-compose.yml` and `.env.example` were checked byte-identical to the Phase 1 workstream, so its root was used as the base; root docs were then updated for Phase 2. |
+## Corrections made in this handoff
 
-## Verification results (integration session)
+- Replaced the Phase 1 starter screen with responsive dashboard, map workspace, parcel dossier, and
+  boundary-comparison views.
+- Corrected the Stitch reference's inconsistent `EPSG:32632` usage and its official/certified language.
+- Updated stale README and handoff claims that incorrectly said Phase 3 was not implemented.
+- Removed the extracted Stitch source from the deliverable; it is a visual reference, not production code.
 
-| Check | Result |
-|---|---|
-| `npm ci`, `npm run lint`, `npm run typecheck` | passed |
-| `npm test` (Vitest, 5 tests) | passed |
-| `npm run build` | passed |
-| Migrations `V1`–`V6` applied in order with `psql` to an empty database (PostgreSQL 16.10 + PostGIS 3.4.3) | passed |
-| `schema_assertions.sql` via `scripts/validate-sql.sh` (positive assertions and must-fail checks) | passed |
-| `geometry_columns` for `parcel_geometries` | `4326 / MULTIPOLYGON` |
-| Migration file numbering | one file each for V1–V6, no duplicates |
-| Backend Java (36 files, main + test) parsed with `javac` | 0 syntax errors (syntax only; symbols not resolved) |
+## Verification
 
-**NOT run (environment limits, not known defects):**
+- Frontend dependencies were restored with `npm ci` and npm reported no known vulnerabilities.
+- Frontend lint/typecheck/test/build could not complete in this environment because installed packages were
+  incomplete after extraction (`vite`, `eslint`, and some type files are absent despite npm reporting success).
+  Run `npm ci` then the four frontend checks on a normal developer machine before relying on the UI.
+- `mvn verify` could not run here because Maven is forced to use a protected `C:\\Users\\LOQ\\.m2` cache. The Java
+  code must be compiled and tested on a normal development machine with Maven Central and Docker available.
 
-| Check | Why |
-|---|---|
-| `mvn -B verify` (compile, `GeometryPolicyTest`, MockMvc tests, `MigrationAssertionsTest`, `PersistenceIntegrationTest`) | No Maven Central access, so no dependencies could be resolved; Maven could not be installed from the Ubuntu mirror either |
-| Flyway execution and `flyway_schema_history` (expect 6 successful rows) | Same; SQL was run through `psql`, not Flyway |
-| `mvn spring-boot:run` against a migrated database | Same |
-| `docker compose up -d db`, image `postgis/postgis:16-3.5` | No Docker daemon |
-| Testcontainers-based tests | No Docker |
-
-Open risks to check on first Java compile: Spring Boot `3.5.7` resolving; `hibernate-spatial` and `jts-core` 1.20.0 being
-the matching pair (`mvn dependency:tree`); Hibernate JSON/spatial annotations in the entities; Testcontainers 1.x API; the
-simple-query-mode assertion script in `MigrationAssertionsTest` (fall back to `validate-sql.sh` in CI if problematic).
-
-**Run this on a machine with Maven Central and Docker before relying on the integration:**
+## Required local verification
 
 ```bash
-cp .env.example .env            # set a unique DB_PASSWORD
+cp .env.example .env
+# Set DB_PASSWORD and a Base64 JWT secret (at least 32 random bytes).
 docker compose up -d db
 (cd backend && mvn -B verify)
-(cd backend && mvn spring-boot:run)   # then: SELECT * FROM flyway_schema_history;  -> 6 rows
 (cd frontend && npm ci && npm run lint && npm run typecheck && npm test && npm run build)
 ```
 
-## Known issues / risks
+## Important open risks
 
-- No authentication or authorization yet (health is public by design). Do not expose to a network or load real land data.
-- The app connects as the container superuser; the owner/runtime role split in `docs/architecture.md` is not implemented, and a superuser can disable the immutability triggers.
-- Backend startup requires a running, PostGIS-enabled database; V1 runs `CREATE EXTENSION IF NOT EXISTS postgis` (on managed PostgreSQL enable it once as admin).
-- CORS allows only `GET, HEAD, OPTIONS`; widen deliberately when write endpoints arrive.
-- Overlap between parcels is reported, not forbidden. Four-eyes review means demo data needs at least two users. No seed users exist.
-- Applied migrations are immutable: every schema change is a new `V7+` file.
-- Java 21 is targeted although the original README mentioned 25.
-- `.gitignore` ignores `*.jar`, so no Maven wrapper jar can be committed.
+- There are no parcel REST endpoints yet. The new UI is deliberately demonstrative and must not be presented as
+  a live cadastral system.
+- The security event listener logs events but does not persist them to `audit_records`; Phase 4 should decide
+  whether login events belong in the persistent audit trail.
+- Login throttling is in-memory and must be replaced with shared storage before multiple backend instances.
+- Database runtime still uses the Compose account rather than a distinct least-privilege application role.
 
-## Next phase (not started here)
+## Next phase
 
-Phase 3: Spring Security with BCrypt/Argon2 hashing into `users.password_hash`, JWT, role-based authorization, application
-audit events (`origin = 'APP'`), and widening CORS only as needed. Later API phases must call `GeometryPolicy.requireStorable`
-for every submitted geometry.
-
-## Phase 3 merge (security)
-
-| Topic | Decision |
-|---|---|
-| Role name | DB seed and `RoleName` use `ADMIN`; the security workstream used `ADMINISTRATOR`. Security code, tests and docs were renamed to `ADMIN` (no migration change). |
-| CORS | Phase 1 `WebConfig`/`WebConfigTest` removed; `SecurityConfig` + `CorsConfigurationSourceFactory` own CORS (GET/POST/PUT/PATCH/DELETE/OPTIONS on `/api/**`, `Authorization` header allowed). Same env var `GEONEXUS_CORS_ALLOWED_ORIGINS` is reused. |
-| Health | `GET /api/v1/health` is explicitly `permitAll`; everything else is authenticated by default. `HealthControllerTest` rewritten to run through the security chain. |
-| User adapter | `com.geonexus.user.JpaUserAccountProvider` implements `UserAccountProvider` using `findWithRolesBy...`; lock state from `locked_until`. |
-| Clock | `SecurityConfig.securityClock()` is the only `Clock` bean (the adapter uses it). |
-| Config | `application.yml` gained `geonexus.security.*`; `GEONEXUS_SECURITY_JWT_SECRET` is required (no default). `.env.example` updated. |
-| Dependencies | Added starter-security, starter-validation, jjwt 0.12.6 (api/impl/jackson), spring-security-test. |
-
-**Not run:** `mvn verify` (no Maven Central here). Phase 3 tests and the adapter have never been compiled.
-**Still open:** persistent audit of security events, `failed_login_attempts` columns unused (limiter is in-memory), no logout/refresh, no user seed.
-Set `GEONEXUS_SECURITY_JWT_SECRET` in `.env` before starting the backend.
-
-## Next phase (not started here)
-
-Phase 3: Spring Security with BCrypt/Argon2 hashing into `users.password_hash`, JWT, role-based authorization, application
-audit events (`origin = 'APP'`), and widening CORS only as needed. Later API phases must call `GeometryPolicy.requireStorable`
-for every submitted geometry.
+Phase 4: implement protected Parcel CRUD under `/api/v1/parcels`, DTOs, GeoJSON Feature/FeatureCollection
+input/output, ownership rules, pagination/filtering, append-only geometry updates, endpoint documentation,
+and tests. Do not start spatial analysis or map integration until Phase 4 is complete.

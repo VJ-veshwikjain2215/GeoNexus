@@ -52,8 +52,8 @@ GeoNexus is planned around a frontend-backend architecture:
 
 ```text
 GeoNexus/
-├── frontend/           # React + TypeScript + Vite shell (Phase 1)
-├── backend/            # Spring Boot app: health API, JPA entities, Flyway migrations (Phases 1-2)
+├── frontend/           # React + TypeScript + Vite academic GIS workspace
+├── backend/            # Spring Boot app: health, auth, JPA entities, Flyway migrations (Phases 1-3)
 │   └── src/main/resources/db/migration/   # V1-V6: the single migration history
 ├── docs/               # architecture.md, data-model.md, setup.md, HANDOFF.md
 ├── docker-compose.yml  # PostgreSQL 16 + PostGIS 3.5 for local development
@@ -111,7 +111,8 @@ The database must be PostGIS-enabled (the Compose service is). Flyway creates th
 See [`docs/setup.md`](docs/setup.md) for checks, database tests and the configuration reference,
 [`docs/data-model.md`](docs/data-model.md) for the schema and the CRS/SRID policy (EPSG:4326, geography-based area),
 [`docs/architecture.md`](docs/architecture.md) for decisions, and [`docs/HANDOFF.md`](docs/HANDOFF.md) for current status.
-No authentication exists yet: do not expose this build to a network.
+Authentication is implemented with JWT for Phase 3. The application remains an early academic project:
+do not expose it to the public internet or use real land-record data.
 
 ## Configuration
 
@@ -119,7 +120,9 @@ Use an `.env.example` file to document required configuration keys without inclu
 
 ## Development Status
 
-**Status:** Early development – Phase 1 (foundation) and Phase 2 (data layer) integrated. Maven/Docker verification is still pending (see `docs/HANDOFF.md`). Authentication (Phase 3) and the parcel API are not implemented.
+**Status:** Early development – Phases 1–3 are integrated: foundation, PostGIS data model,
+and JWT authentication/role-based access. Parcel APIs, spatial-analysis APIs, and live map data
+remain future work. See `docs/HANDOFF.md` for the verification status.
 
 Implementation details, screenshots, API documentation, and deployment instructions will be added as the project progresses.
 
@@ -151,7 +154,7 @@ The intended deployment platform is [Embarko](https://embarko.app/). Database ho
 
 ## License
 
-This project is intended to use the [MIT License](LICENSE). The license applies once the LICENSE file has been added to the repository.
+This project is released under the [MIT License](LICENSE).
 
 ---
 
