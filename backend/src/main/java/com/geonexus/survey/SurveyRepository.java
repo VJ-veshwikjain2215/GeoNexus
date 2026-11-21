@@ -25,4 +25,6 @@ public interface SurveyRepository extends JpaRepository<Survey, UUID> {
 
     @Query("select s from Survey s where s.status in :statuses")
     Page<Survey> findByStatusIn(@Param("statuses") Collection<SurveyStatus> statuses, Pageable pageable);
+
+    long countByStatus(SurveyStatus status);
 }

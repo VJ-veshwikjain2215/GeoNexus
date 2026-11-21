@@ -87,6 +87,268 @@ export interface SpatialAnalysisResponse {
   stationDisplacements: StationDisplacement[]
 }
 
+export interface DetectedStation {
+  station: string
+  longitude: number
+  latitude: number
+  edgeConfidence: number
+  displacementFromRecordedM: number
+}
+
+export interface AiBoundaryDetectionRequest {
+  sensitivity?: number
+  smoothingTolerance?: number
+  imagerySource?: string
+  algorithm?: string
+}
+
+export interface AiBoundaryDetectionResponse {
+  parcelId: string
+  parcelCode: string
+  detectionId: string
+  algorithm: string
+  imagerySource: string
+  confidence: number
+  qualityScore: number
+  edgeSharpness: number
+  detectedAt: string
+  detectedAreaSqM: number
+  detectedAreaHa: number
+  recordedAreaSqM?: number
+  recordedAreaHa?: number
+  areaDeltaSqM?: number
+  areaDeltaPercentage?: number
+  detectedGeometry: GeoJsonGeometry
+  detectedStations: DetectedStation[]
+  academicDisclaimer: string
+  status: string
+}
+
+export interface AiProposeBoundaryRequest {
+  detectionId: string
+  surveyorNotes?: string
+}
+
+export interface CadastralSummaryStats {
+  totalParcels: number
+  activeParcels: number
+  draftParcels: number
+  archivedParcels: number
+  verifiedParcels: number
+  pendingBoundaryProposals: number
+  totalSurveyedAreaHa: number
+  averageParcelAreaHa: number
+  inFlightResurveysCount: number
+  flaggedForReviewCount: number
+  validationsPassedMtd: number
+  activeGeodeticPillars: number
+  firstPassRatePercent: number
+  meanRmseM: number
+  dataSource: string
+}
+
+export interface AreaDistributionBin {
+  rangeLabel: string
+  category: string
+  minAreaHa: number
+  maxAreaHa: number
+  parcelCount: number
+  totalAreaHa: number
+  percentage: number
+}
+
+export interface AdministrativeBreakdown {
+  subdistrict: string
+  taluk: string
+  district: string
+  totalTargetParcels: number
+  completedAndSealed: number
+  underActiveSurvey: number
+  completionPercentage: number
+  groundStatus: string
+  leadSurveyor: string
+  isSyntheticTarget: boolean
+}
+
+export interface BoundaryVarianceMetrics {
+  totalProposalsEvaluated: number
+  positiveDeltaCount: number
+  negativeDeltaCount: number
+  zeroDeltaCount: number
+  averageDeltaHa: number
+  averageDeltaPercent: number
+  maxDeltaHa: number
+  aiAssistedCount: number
+  groundSurveyCount: number
+  flaggedVarianceCount: number
+}
+
+export interface ActionableCadastralInsight {
+  id: string
+  severity: 'CRITICAL' | 'WARNING' | 'INFO'
+  category: string
+  title: string
+  description: string
+  parcelCode?: string
+  parcelId?: string
+  recommendedAction: string
+}
+
+export interface CadastralActivityItem {
+  id: string
+  type: 'OK' | 'PT' | 'REJ' | 'IMP' | 'AI'
+  title: string
+  timestamp: string
+  description: string
+  actor: string
+  parcelCode?: string
+  varianceText?: string
+  hash?: string
+  isDemonstration: boolean
+}
+
+export interface SeasonalTrendPoint {
+  period: string
+  targetCount: number
+  completedCount: number
+  inProgressCount: number
+  disputedCount: number
+  velocityHectaresPerDay: number
+}
+
+export interface AnalyticsDashboardResponse {
+  summary: CadastralSummaryStats
+  areaDistribution: AreaDistributionBin[]
+  administrativeBreakdown: AdministrativeBreakdown[]
+  boundaryVariance: BoundaryVarianceMetrics
+  actionableInsights: ActionableCadastralInsight[]
+  recentActivity: CadastralActivityItem[]
+  seasonalTrends: SeasonalTrendPoint[]
+  crs: string
+  precisionTolerance: string
+  disclaimer: string
+  generatedAt: string
+}
+
+// ==================== PHASE 9 REPORTS & AUDIT INTERFACES ====================
+export interface StationCoordinateRecord {
+  station: string
+  longitude: number
+  latitude: number
+  eastingUtm44: number
+  northingUtm44: number
+  elevationM: number
+  status: string
+}
+
+export interface GeometryVersionSummary {
+  versionNo: number
+  source: string
+  status: string
+  areaHa: number
+  areaDeltaHa?: number
+  areaDeltaPercent?: number
+  surveyorUsername?: string
+  reviewerUsername?: string
+  createdAt: string
+  reviewedAt?: string
+  notes?: string
+}
+
+export interface ParcelDossierReport {
+  parcelId: string
+  parcelCode: string
+  name?: string
+  village?: string
+  taluk?: string
+  district: string
+  state: string
+  landUse: string
+  status: string
+  ownerName?: string
+  externalReference?: string
+  notes?: string
+  currentVersionNo?: number
+  areaSqM?: number
+  areaHa?: number
+  perimeterM?: number
+  verticesCount?: number
+  stations: StationCoordinateRecord[]
+  history: GeometryVersionSummary[]
+  surveyReference?: string
+  surveyorName?: string
+  reviewerName?: string
+  reviewedAt?: string
+  certificationSeal?: string
+  verificationHash?: string
+  crs: string
+  precisionTolerance: string
+  disclaimer: string
+  generatedAt: string
+}
+
+export interface StationDisplacementRecord {
+  station: string
+  lonBaseline: number
+  latBaseline: number
+  lonProposed: number
+  latProposed: number
+  shiftDistanceM: number
+  status: string
+}
+
+export interface BoundaryComparisonReport {
+  parcelId: string
+  parcelCode: string
+  locality: string
+  district: string
+  baselineVersionNo: number
+  proposedVersionNo: number
+  baselineAreaHa: number
+  proposedAreaHa: number
+  areaDeltaHa: number
+  areaDeltaPercent: number
+  varianceClassification: string
+  withinTolerance: boolean
+  maxDisplacementM: number
+  averageDisplacementM: number
+  displacements: StationDisplacementRecord[]
+  surveyorNotes?: string
+  adjudicationDirective: string
+  status: string
+  reviewedBy?: string
+  reviewedAt?: string
+  crs: string
+  precisionTolerance: string
+  disclaimer: string
+  generatedAt: string
+}
+
+export interface AuditRecordResponse {
+  id: number
+  occurredAt: string
+  actorUserId?: string
+  actorUsername?: string
+  action: string
+  outcome: string
+  entityType?: string
+  entityId?: string
+  parcelId?: string
+  parcelCode?: string
+  origin?: string
+  requestId?: string
+  clientIp?: string
+  details?: Record<string, unknown>
+  integrityHash?: string
+}
+
+export interface AuditFilterQuery {
+  page?: number
+  size?: number
+  parcelId?: string
+  action?: string
+}
+
 export interface GeometryResponse {
   id: string
   parcelId: string
@@ -265,6 +527,11 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     return undefined as unknown as T
   }
 
+  const contentType = response.headers.get('content-type') || ''
+  if (contentType.includes('text/csv') || contentType.includes('text/plain')) {
+    return (await response.text()) as unknown as T
+  }
+
   return response.json() as Promise<T>
 }
 
@@ -388,6 +655,78 @@ export const geometryApi = {
       method: 'POST',
       body: JSON.stringify({ reason })
     })
+  }
+}
+
+// ==================== AI BOUNDARY API (PHASE 7) ====================
+export const aiApi = {
+  detect: async (
+    parcelId: string,
+    params?: AiBoundaryDetectionRequest
+  ): Promise<AiBoundaryDetectionResponse> => {
+    return request<AiBoundaryDetectionResponse>(`/parcels/${parcelId}/ai-boundary/detect`, {
+      method: 'POST',
+      body: JSON.stringify(params ?? {})
+    })
+  },
+
+  propose: async (
+    parcelId: string,
+    payload: AiProposeBoundaryRequest
+  ): Promise<GeometryResponse> => {
+    return request<GeometryResponse>(`/parcels/${parcelId}/ai-boundary/propose`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
+  }
+}
+
+export const analyticsApi = {
+  getDashboard: async (): Promise<AnalyticsDashboardResponse> => {
+    return request<AnalyticsDashboardResponse>('/analytics/dashboard')
+  },
+
+  getSummary: async (): Promise<CadastralSummaryStats> => {
+    return request<CadastralSummaryStats>('/analytics/summary')
+  }
+}
+
+// ==================== PHASE 9 REPORTS & AUDIT API ====================
+export const reportApi = {
+  getParcelDossier: async (parcelId: string): Promise<ParcelDossierReport> => {
+    return request<ParcelDossierReport>(`/reports/parcels/${parcelId}`)
+  },
+
+  getBoundaryComparison: async (parcelId: string): Promise<BoundaryComparisonReport> => {
+    return request<BoundaryComparisonReport>(`/reports/parcels/${parcelId}/boundary-comparison`)
+  },
+
+  exportStationLedgerCsv: async (parcelId: string): Promise<string> => {
+    return request<string>(`/reports/parcels/${parcelId}/export/csv`, {
+      headers: { Accept: 'text/csv' }
+    })
+  },
+
+  exportParcelGeoJson: async (parcelId: string): Promise<GeoJsonFeature> => {
+    return request<GeoJsonFeature>(`/reports/parcels/${parcelId}/export/geojson`, {
+      headers: { Accept: 'application/geo+json, application/json' }
+    })
+  },
+
+  exportAdjudicationDocketCsv: async (): Promise<string> => {
+    return request<string>('/reports/adjudication-docket/export/csv', {
+      headers: { Accept: 'text/csv' }
+    })
+  },
+
+  getAuditHistory: async (filters: AuditFilterQuery = {}): Promise<PagedResponse<AuditRecordResponse>> => {
+    const params = new URLSearchParams()
+    if (filters.page !== undefined) params.set('page', String(filters.page))
+    if (filters.size !== undefined) params.set('size', String(filters.size))
+    if (filters.parcelId) params.set('parcelId', filters.parcelId)
+    if (filters.action) params.set('action', filters.action)
+    const query = params.toString() ? `?${params.toString()}` : ''
+    return request<PagedResponse<AuditRecordResponse>>(`/reports/audit${query}`)
   }
 }
 
