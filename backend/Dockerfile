@@ -25,7 +25,15 @@ USER geonexus
 
 EXPOSE 8080
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/api/v1/health || exit 1
+# Memory-efficient JVM settings for Render Free Tier (512 MB RAM limit):
+# - MaxRAMPercentage=65.0 keeps maximum heap under ~330 MB
+# - UseSerialGC minimizes GC thread overhead (ideal for 0.1 CPU)
+# - Xss512k reduces per-thread stack allocation
+# - MaxMetaspaceSize bounds class metadata
+# - ExitOnOutOfMemoryError ensures clean restart on memory pressure
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=65.0 -XX:MinRAMPercentage=40.0 -XX:+UseSerialGC -Xss512k -XX:MaxMetaspaceSize=160m -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/./urandom"
 
-ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=35s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-8080}/api/v1/health || exit 1
+
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -Dserver.port=${PORT:-8080} -jar app.jar"]

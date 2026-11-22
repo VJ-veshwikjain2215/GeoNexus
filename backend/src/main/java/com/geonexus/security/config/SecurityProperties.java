@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import java.time.Duration;
 import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.ConstructorBinding;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 import org.springframework.validation.annotation.Validated;
 
@@ -17,7 +18,24 @@ import org.springframework.validation.annotation.Validated;
 public record SecurityProperties(
         @NotNull @Valid Jwt jwt,
         @NotNull @Valid @DefaultValue Cors cors,
-        @NotNull @Valid @DefaultValue Login login) {
+        @NotNull @Valid @DefaultValue Login login,
+        @Valid @DefaultValue BootstrapAdmin bootstrapAdmin) {
+
+    @ConstructorBinding
+    public SecurityProperties(
+            Jwt jwt,
+            Cors cors,
+            Login login,
+            BootstrapAdmin bootstrapAdmin) {
+        this.jwt = jwt;
+        this.cors = cors;
+        this.login = login;
+        this.bootstrapAdmin = bootstrapAdmin;
+    }
+
+    public SecurityProperties(Jwt jwt, Cors cors, Login login) {
+        this(jwt, cors, login, new BootstrapAdmin(false, null, null, "admin@geonexus.internal", "Cadastral Administrator"));
+    }
 
     public record Jwt(
             @NotBlank String secret,
@@ -40,5 +58,19 @@ public record SecurityProperties(
     public record Login(
             @Min(1) @DefaultValue("5") int maxFailedAttempts,
             @NotNull @DefaultValue("PT15M") Duration lockoutWindow) {
+    }
+
+    public record BootstrapAdmin(
+            @DefaultValue("false") boolean enabled,
+            String username,
+            String password,
+            @DefaultValue("admin@geonexus.internal") String email,
+            @DefaultValue("Cadastral Administrator") String displayName) {
+
+        @Override
+        public String toString() {
+            return "BootstrapAdmin[enabled=" + enabled + ", username=" + username + ", email=" + email
+                    + ", password=<redacted>]";
+        }
     }
 }

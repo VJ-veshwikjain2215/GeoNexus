@@ -7,6 +7,9 @@ import {
   aiApi,
   analyticsApi,
   reportApi,
+  authApi,
+  tokenStore,
+  ApiError,
   haversineDistanceM,
   wgs84ToUtm44,
   type GeometryResponse,
@@ -24,7 +27,8 @@ import {
   type BoundaryComparisonReport,
   type StationCoordinateRecord,
   type StationDisplacementRecord,
-  type AuditRecordResponse
+  type AuditRecordResponse,
+  type UserSummary
 } from './api/client'
 
 type View = 'dashboard' | 'map' | 'parcel' | 'surveys' | 'boundary' | 'reports' | 'audit' | 'administration'
@@ -707,9 +711,9 @@ function MapCanvas({
           aria-label="Toggle fullscreen"
           onClick={() => {
             if (!document.fullscreenElement) {
-              document.documentElement.requestFullscreen?.().catch(() => {})
+              document.documentElement.requestFullscreen?.().catch(() => { })
             } else {
-              document.exitFullscreen?.().catch(() => {})
+              document.exitFullscreen?.().catch(() => { })
             }
           }}
         >
@@ -2128,16 +2132,16 @@ function Dashboard({
                   sub.groundStatus === 'Delayed by Monsoon'
                     ? 'delayed'
                     : sub.completionPercentage < 70
-                    ? 'warning'
-                    : 'normal'
+                      ? 'warning'
+                      : 'normal'
                 const tagClass =
                   sub.groundStatus === 'On Schedule'
                     ? 'on-schedule'
                     : sub.groundStatus === 'Underway'
-                    ? 'underway'
-                    : sub.groundStatus === 'Final Audit'
-                    ? 'final-audit'
-                    : 'delayed'
+                      ? 'underway'
+                      : sub.groundStatus === 'Final Audit'
+                        ? 'final-audit'
+                        : 'delayed'
                 return (
                   <tr key={sub.subdistrict}>
                     <td style={{ fontWeight: 600, color: '#4a1f2b' }}>{sub.subdistrict}</td>
@@ -2248,11 +2252,11 @@ function MapView({
   const stationsList = spatialAnalysis?.stationDisplacements && spatialAnalysis.stationDisplacements.length > 0
     ? spatialAnalysis.stationDisplacements.slice(0, 4)
     : [
-        { station: 'ST-01', lonExisting: 80.4312, latExisting: 16.3021, lonProposed: 80.431, latProposed: 16.3024, shiftDistanceM: 1.2 },
-        { station: 'ST-02', lonExisting: 80.4355, latExisting: 16.3025, lonProposed: 80.4358, latProposed: 16.3027, shiftDistanceM: 2.4 },
-        { station: 'ST-03', lonExisting: 80.4348, latExisting: 16.2985, lonProposed: 80.4352, latProposed: 16.2982, shiftDistanceM: 0.8 },
-        { station: 'ST-04', lonExisting: 80.4305, latExisting: 16.2981, lonProposed: 80.4303, latProposed: 16.2979, shiftDistanceM: 0.3 }
-      ]
+      { station: 'ST-01', lonExisting: 80.4312, latExisting: 16.3021, lonProposed: 80.431, latProposed: 16.3024, shiftDistanceM: 1.2 },
+      { station: 'ST-02', lonExisting: 80.4355, latExisting: 16.3025, lonProposed: 80.4358, latProposed: 16.3027, shiftDistanceM: 2.4 },
+      { station: 'ST-03', lonExisting: 80.4348, latExisting: 16.2985, lonProposed: 80.4352, latProposed: 16.2982, shiftDistanceM: 0.8 },
+      { station: 'ST-04', lonExisting: 80.4305, latExisting: 16.2981, lonProposed: 80.4303, latProposed: 16.2979, shiftDistanceM: 0.3 }
+    ]
 
   const [mobileTab, setMobileTab] = useState<'map' | 'layers' | 'inspector'>('map')
 
@@ -3010,18 +3014,18 @@ function ParcelView({
   const stations =
     activeRing && activeRing.points.length > 0
       ? activeRing.points
-          .slice(
-            0,
-            activeRing.points.length > 1 &&
-              activeRing.points[0][0] === activeRing.points[activeRing.points.length - 1][0]
-              ? -1
-              : undefined
-          )
-          .map((pt, i) => ({
-            name: `ST-${String(i + 1).padStart(2, '0')}`,
-            lon: pt[0],
-            lat: pt[1]
-          }))
+        .slice(
+          0,
+          activeRing.points.length > 1 &&
+            activeRing.points[0][0] === activeRing.points[activeRing.points.length - 1][0]
+            ? -1
+            : undefined
+        )
+        .map((pt, i) => ({
+          name: `ST-${String(i + 1).padStart(2, '0')}`,
+          lon: pt[0],
+          lat: pt[1]
+        }))
       : []
 
   return (
@@ -3258,13 +3262,13 @@ function BoundaryView({
       ledgerRows.length > 0
         ? ledgerRows
         : [
-            {
-              node: 'ST-01',
-              existing: 'No shift data',
-              proposed: 'Awaiting resurvey',
-              shift: '—'
-            }
-          ]
+          {
+            node: 'ST-01',
+            existing: 'No shift data',
+            proposed: 'Awaiting resurvey',
+            shift: '—'
+          }
+        ]
 
     const headers = ['Node', 'Existing_Coordinates', 'Proposed_Coordinates', 'Shift_Distance']
     const csvLines = [
@@ -3925,8 +3929,8 @@ function ReportsView({
               {reportType === 'dossier'
                 ? 'OFFICIAL CADASTRAL PARCEL DOSSIER & BOUNDARY LEDGER'
                 : reportType === 'comparison'
-                ? 'ADJUDICATION & BOUNDARY COMPARISON REPORT'
-                : 'GEODETIC CORNER STATIONS & UTM ZONE 44N LEDGER'}
+                  ? 'ADJUDICATION & BOUNDARY COMPARISON REPORT'
+                  : 'GEODETIC CORNER STATIONS & UTM ZONE 44N LEDGER'}
             </h1>
             <span className="report-sub-title">
               Cadastral Code: <strong>{activeDossier.parcelCode}</strong> • Locality: {activeDossier.village}, {activeDossier.district} • Division: 14/B
@@ -4440,12 +4444,12 @@ function AuditView({
               actionStr.includes('VERIFIED') || (outcomeStr === 'SUCCESS' && !actionStr.includes('REJECTED'))
                 ? 'ok'
                 : actionStr.includes('INGESTED') || actionStr.includes('PROPOSED')
-                ? 'pt'
-                : actionStr.includes('REJECTED')
-                ? 'rej'
-                : actionStr.includes('IMPORT')
-                ? 'imp'
-                : 'sec'
+                  ? 'pt'
+                  : actionStr.includes('REJECTED')
+                    ? 'rej'
+                    : actionStr.includes('IMPORT')
+                      ? 'imp'
+                      : 'sec'
 
             return (
               <tr key={r.id}>
@@ -4674,6 +4678,186 @@ function NewParcelModal({
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  )
+}
+
+function AuthModal({
+  isOpen,
+  onClose,
+  onSuccess,
+  reason
+}: {
+  isOpen: boolean
+  onClose: () => void
+  onSuccess: (user: UserSummary) => void
+  reason?: string
+}) {
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  if (!isOpen) return null
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!username.trim() || !password) {
+      setError('Please provide both username and password.')
+      return
+    }
+    setError(null)
+    setIsLoading(true)
+    try {
+      const resp = await authApi.login(username.trim(), password)
+      onSuccess(resp.user)
+      onClose()
+    } catch (err: unknown) {
+      if (err instanceof ApiError) {
+        if (err.status === 401) {
+          setError('Invalid cadastral credentials. Check your username and password.')
+        } else if (err.status === 429) {
+          setError('Account temporarily locked due to excessive failed attempts. Please retry later.')
+        } else {
+          setError(err.message || 'Authentication failed.')
+        }
+      } else if (err instanceof Error) {
+        setError(err.message)
+      } else {
+        setError('Authentication service unreachable. Ensure backend is running.')
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const fillQuickCredentials = (u: string, p: string) => {
+    setUsername(u)
+    setPassword(p)
+    setError(null)
+  }
+
+  return (
+    <div
+      className="auth-modal-backdrop"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="auth-modal-title"
+    >
+      <div className="auth-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="auth-modal-header">
+          <div>
+            <div className="eyebrow" style={{ margin: 0 }}>CADASTRAL AUTHENTICATION</div>
+            <h3 id="auth-modal-title">Officer Credentials Gate</h3>
+          </div>
+          <button
+            type="button"
+            className="text-button"
+            onClick={onClose}
+            aria-label="Close authentication modal"
+            style={{ fontSize: '18px', padding: '4px' }}
+          >
+            ✕
+          </button>
+        </div>
+        <div className="auth-modal-body">
+          {reason && (
+            <div style={{ background: '#fdf1ea', border: '1px solid #d9cec7', padding: '8px 12px', borderRadius: '3px', fontSize: '12px', color: '#4a1f2b' }}>
+              <strong>Notice:</strong> {reason}
+            </div>
+          )}
+
+          {error && (
+            <div className="auth-error-banner" role="alert">
+              <span className="material-symbols-outlined text-[16px]">error</span>
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="auth-input-group">
+              <label htmlFor="auth-username">Cadastral Officer Username *</label>
+              <input
+                id="auth-username"
+                type="text"
+                required
+                autoFocus
+                placeholder="e.g. admin or surveyor1"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+            </div>
+
+            <div className="auth-input-group">
+              <label htmlFor="auth-password">Password *</label>
+              <input
+                id="auth-password"
+                type="password"
+                required
+                placeholder="Enter password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+
+            <div className="auth-demo-shortcut">
+              <span>Quick evaluation autofill:</span>
+              <div className="auth-demo-buttons">
+                <button
+                  type="button"
+                  className="button secondary"
+                  style={{ padding: '3px 7px', fontSize: '10px' }}
+                  onClick={() => fillQuickCredentials('admin', 'admin123')}
+                >
+                  Admin
+                </button>
+                <button
+                  type="button"
+                  className="button secondary"
+                  style={{ padding: '3px 7px', fontSize: '10px' }}
+                  onClick={() => fillQuickCredentials('reviewer1', 'reviewer123')}
+                >
+                  Reviewer
+                </button>
+                <button
+                  type="button"
+                  className="button secondary"
+                  style={{ padding: '3px 7px', fontSize: '10px' }}
+                  onClick={() => fillQuickCredentials('surveyor1', 'surveyor123')}
+                >
+                  Surveyor
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+              <button
+                type="submit"
+                className="button primary"
+                disabled={isLoading}
+                style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px' }}
+              >
+                {isLoading ? (
+                  <>Verifying…</>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-[16px]">login</span>
+                    Sign In
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                className="button secondary"
+                onClick={onClose}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   )
@@ -5123,99 +5307,99 @@ function SurveysView({
             ) : (
               filteredSurveys.map((item) => {
                 const isExceeded = item.closurePrecisionM > item.closureThresholdM
-              const deltaArea = item.surveyedAreaHa - item.oldAreaHa
-              const deltaSign = deltaArea >= 0 ? `+${deltaArea.toFixed(3)}` : deltaArea.toFixed(3)
-              return (
-                <tr key={item.id}>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <b style={{ fontFamily: 'JetBrains Mono, monospace', color: '#4a1f2b' }}>{item.surveyNumber}</b>
-                      <span className={`survey-type-badge ${item.surveyType.toLowerCase()}`}>
-                        {item.surveyType}
+                const deltaArea = item.surveyedAreaHa - item.oldAreaHa
+                const deltaSign = deltaArea >= 0 ? `+${deltaArea.toFixed(3)}` : deltaArea.toFixed(3)
+                return (
+                  <tr key={item.id}>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <b style={{ fontFamily: 'JetBrains Mono, monospace', color: '#4a1f2b' }}>{item.surveyNumber}</b>
+                        <span className={`survey-type-badge ${item.surveyType.toLowerCase()}`}>
+                          {item.surveyType}
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 600, color: '#4a1f2b' }}>{item.parcelCode}</div>
+                      <div style={{ fontSize: '10px', color: '#6e625d' }}>{item.locality}</div>
+                    </td>
+                    <td>
+                      <div className="survey-method-pill">
+                        <span className="material-symbols-outlined" style={{ fontSize: '12px' }} aria-hidden="true">
+                          {item.method === 'GNSS' ? 'satellite_alt' : item.method === 'DRONE' ? 'flight' : item.method === 'TOTAL_STATION' ? 'explore' : 'draw'}
+                        </span>
+                        <span>{item.method}</span>
+                      </div>
+                      <div style={{ fontSize: '10px', color: '#6e625d', marginTop: '2px' }}>{item.equipment}</div>
+                    </td>
+                    <td style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '11px' }}>
+                      {item.surveyDate}
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 600, color: '#4a1f2b' }}>{item.surveyor}</div>
+                      <div style={{ fontSize: '10px', color: '#6e625d' }}>{item.surveyorRole}</div>
+                    </td>
+                    <td>
+                      <div style={{ fontSize: '11px', color: item.reviewer === 'Pending' ? '#a03f24' : '#4a1f2b' }}>
+                        {item.reviewer}
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`closure-pill ${isExceeded ? 'exceeded' : 'pass'}`}>
+                        {item.closurePrecisionM.toFixed(3)} m {isExceeded ? '⚠ Exceeded' : '✓ Pass'}
                       </span>
-                    </div>
-                  </td>
-                  <td>
-                    <div style={{ fontWeight: 600, color: '#4a1f2b' }}>{item.parcelCode}</div>
-                    <div style={{ fontSize: '10px', color: '#6e625d' }}>{item.locality}</div>
-                  </td>
-                  <td>
-                    <div className="survey-method-pill">
-                      <span className="material-symbols-outlined" style={{ fontSize: '12px' }} aria-hidden="true">
-                        {item.method === 'GNSS' ? 'satellite_alt' : item.method === 'DRONE' ? 'flight' : item.method === 'TOTAL_STATION' ? 'explore' : 'draw'}
+                      <div style={{ fontSize: '9px', color: '#6e625d', marginTop: '2px', fontFamily: 'JetBrains Mono, monospace' }}>
+                        Limit: ±{item.closureThresholdM.toFixed(3)} m
+                      </div>
+                    </td>
+                    <td style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '11px' }}>
+                      <div>{item.oldAreaHa.toFixed(2)} → {item.surveyedAreaHa.toFixed(2)} ha</div>
+                      <div style={{ fontSize: '10px', color: deltaArea > 0 ? '#a03f24' : deltaArea < 0 ? '#ba1a1a' : '#6e625d', fontWeight: 600 }}>
+                        {deltaSign} ha
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`status ${item.status === 'APPROVED' ? 'valid' : ''}`} style={item.status === 'REJECTED' ? { borderColor: '#ba1a1a', background: '#ffd9e0', color: '#ba1a1a' } : undefined}>
+                        {item.status.replace(/_/g, ' ')}
                       </span>
-                      <span>{item.method}</span>
-                    </div>
-                    <div style={{ fontSize: '10px', color: '#6e625d', marginTop: '2px' }}>{item.equipment}</div>
-                  </td>
-                  <td style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '11px' }}>
-                    {item.surveyDate}
-                  </td>
-                  <td>
-                    <div style={{ fontWeight: 600, color: '#4a1f2b' }}>{item.surveyor}</div>
-                    <div style={{ fontSize: '10px', color: '#6e625d' }}>{item.surveyorRole}</div>
-                  </td>
-                  <td>
-                    <div style={{ fontSize: '11px', color: item.reviewer === 'Pending' ? '#a03f24' : '#4a1f2b' }}>
-                      {item.reviewer}
-                    </div>
-                  </td>
-                  <td>
-                    <span className={`closure-pill ${isExceeded ? 'exceeded' : 'pass'}`}>
-                      {item.closurePrecisionM.toFixed(3)} m {isExceeded ? '⚠ Exceeded' : '✓ Pass'}
-                    </span>
-                    <div style={{ fontSize: '9px', color: '#6e625d', marginTop: '2px', fontFamily: 'JetBrains Mono, monospace' }}>
-                      Limit: ±{item.closureThresholdM.toFixed(3)} m
-                    </div>
-                  </td>
-                  <td style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '11px' }}>
-                    <div>{item.oldAreaHa.toFixed(2)} → {item.surveyedAreaHa.toFixed(2)} ha</div>
-                    <div style={{ fontSize: '10px', color: deltaArea > 0 ? '#a03f24' : deltaArea < 0 ? '#ba1a1a' : '#6e625d', fontWeight: 600 }}>
-                      {deltaSign} ha
-                    </div>
-                  </td>
-                  <td>
-                    <span className={`status ${item.status === 'APPROVED' ? 'valid' : ''}`} style={item.status === 'REJECTED' ? { borderColor: '#ba1a1a', background: '#ffd9e0', color: '#ba1a1a' } : undefined}>
-                      {item.status.replace(/_/g, ' ')}
-                    </span>
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    <div className="action-btn-group">
-                      <button
-                        className="btn-inspect-coord"
-                        title="Inspect on Map"
-                        onClick={() => {
-                          onSelectParcelCode(item.parcelCode)
-                          go('map')
-                        }}
-                      >
-                        Map
-                      </button>
-                      <button
-                        className="btn-compare"
-                        title="Compare Boundaries"
-                        onClick={() => {
-                          onSelectParcelCode(item.parcelCode)
-                          go('boundary')
-                        }}
-                      >
-                        Compare
-                      </button>
-                      <button
-                        className="btn-inspect-coord"
-                        title="Official Dossier"
-                        onClick={() => {
-                          onSelectParcelCode(item.parcelCode)
-                          go('reports')
-                        }}
-                      >
-                        Dossier
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              )
-            }))}
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <div className="action-btn-group">
+                        <button
+                          className="btn-inspect-coord"
+                          title="Inspect on Map"
+                          onClick={() => {
+                            onSelectParcelCode(item.parcelCode)
+                            go('map')
+                          }}
+                        >
+                          Map
+                        </button>
+                        <button
+                          className="btn-compare"
+                          title="Compare Boundaries"
+                          onClick={() => {
+                            onSelectParcelCode(item.parcelCode)
+                            go('boundary')
+                          }}
+                        >
+                          Compare
+                        </button>
+                        <button
+                          className="btn-inspect-coord"
+                          title="Official Dossier"
+                          onClick={() => {
+                            onSelectParcelCode(item.parcelCode)
+                            go('reports')
+                          }}
+                        >
+                          Dossier
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              }))}
           </tbody>
         </table>
       </div>
@@ -5231,11 +5415,17 @@ function SurveysView({
 function AdministrationView({
   go,
   userRole,
-  onToggleUserRole
+  onToggleUserRole,
+  currentUser,
+  systemMode,
+  onOpenAuthModal
 }: {
   go: (v: View) => void
   userRole: 'REVIEWER' | 'SURVEYOR'
   onToggleUserRole: () => void
+  currentUser?: UserSummary | null
+  systemMode?: 'LIVE' | 'DEMO' | 'CONNECTING'
+  onOpenAuthModal?: () => void
 }) {
   const [feedback, setFeedback] = useState<string | null>(null)
 
@@ -5271,15 +5461,38 @@ function AdministrationView({
           <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#4a1f2b' }} aria-hidden="true">tune</span>
           <span style={{ fontWeight: 600 }}>SYSTEM ADMINISTRATION &amp; GEODETIC GOVERNANCE:</span>
           <span>
-            Authorized demonstration session. Telemetry, migration records, and parameters are simulated demonstration data for client-side evaluation.
+            {systemMode === 'LIVE'
+              ? (currentUser ? `Live session authenticated as ${currentUser.username}. Geodetic and administrative governance active.` : 'Live backend connected. Authentication required for system configuration.')
+              : 'Authorized demonstration session. Telemetry, migration records, and parameters are simulated demonstration data for client-side evaluation.'}
           </span>
         </div>
         <div className="disclaimer-ribbon-right">
-          <span>ROLE: {userRole === 'REVIEWER' ? 'Senior Reviewer' : 'Survey Officer'}</span>
+          <span>ROLE: {currentUser ? currentUser.roles.join(', ') : (userRole === 'REVIEWER' ? 'Senior Reviewer (Demo)' : 'Survey Officer (Demo)')}</span>
           <span>•</span>
-          <span>SESSION: CAD-D4-8819 (Demo)</span>
+          <span>SESSION: {currentUser ? `${currentUser.username.toUpperCase()} (Live)` : 'CAD-D4-8819 (Demo)'}</span>
         </div>
       </div>
+
+      {systemMode === 'LIVE' && !currentUser && (
+        <div className="auth-mode-notice-banner" role="alert">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="material-symbols-outlined text-[18px]">lock</span>
+            <span>
+              <strong>Administrative Access Restricted:</strong> You are connected to the live backend. Calibrating system parameters and officer rosters requires an authenticated ADMIN session.
+            </span>
+          </div>
+          {onOpenAuthModal && (
+            <button
+              type="button"
+              className="button orange-button"
+              onClick={onOpenAuthModal}
+              style={{ padding: '5px 12px', fontSize: '11px', whiteSpace: 'nowrap' }}
+            >
+              Sign In as Administrator
+            </button>
+          )}
+        </div>
+      )}
 
       {feedback && (
         <div className="notification-banner success" role="alert">
@@ -5529,7 +5742,50 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [userRole, setUserRole] = useState<'REVIEWER' | 'SURVEYOR'>('REVIEWER')
   const [actionStatus, setActionStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const [currentUser, setCurrentUser] = useState<UserSummary | null>(() => authApi.getCurrentUser())
+  const [systemMode, setSystemMode] = useState<'LIVE' | 'DEMO' | 'CONNECTING'>('CONNECTING')
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+  const [authModalReason, setAuthModalReason] = useState<string | undefined>(undefined)
+  const [backendError, setBackendError] = useState<string | null>(null)
   const [, startTransition] = useTransition()
+
+  // Probe backend health and validate existing session on mount
+  useEffect(() => {
+    let active = true
+
+    const probeBackend = async () => {
+      try {
+        const res = await fetch('/api/v1/health')
+        if (!active) return
+        if (res.ok) {
+          setSystemMode('LIVE')
+          if (tokenStore.get()) {
+            try {
+              const me = await authApi.getMe()
+              if (active) setCurrentUser(me)
+            } catch {
+              if (active) {
+                tokenStore.clear()
+                setCurrentUser(null)
+              }
+            }
+          }
+        } else {
+          setSystemMode('DEMO')
+        }
+      } catch {
+        if (active) {
+          setSystemMode('DEMO')
+        }
+      }
+    }
+
+    void probeBackend()
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   const filteredParcels = useMemo(() => {
     const q = searchQuery.trim().toLowerCase()
@@ -5595,10 +5851,20 @@ export default function App() {
           if (loaded.length > 0) {
             setSelectedParcel(loaded[0])
           }
+          setSystemMode('LIVE')
+          setBackendError(null)
         }
       })
-      .catch(() => {
-        // Fall back gracefully to DEFAULT_PARCELS
+      .catch((err: unknown) => {
+        if (!active) return
+        if (err instanceof ApiError) {
+          if (err.status === 401 || err.status === 403) {
+            setBackendError(`Backend authentication required: ${err.message} (HTTP ${err.status}). Operating in demonstration mode until signed in.`)
+          } else {
+            setBackendError(`Backend connection failure: ${err.message} (HTTP ${err.status}). Operating in demonstration mode.`)
+          }
+        }
+        setSystemMode('DEMO')
       })
 
     return () => {
@@ -5666,6 +5932,15 @@ export default function App() {
     })
   }
 
+  const handleLogout = () => {
+    authApi.logout()
+    setCurrentUser(null)
+    setActionStatus({
+      type: 'success',
+      message: 'You have been signed out of GeoNexus.'
+    })
+  }
+
   const handleCreateParcel = async (data: {
     parcelCode: string
     name: string
@@ -5673,32 +5948,56 @@ export default function App() {
     district: string
     state: string
   }) => {
-    const created = await parcelApi.create({
-      parcelCode: data.parcelCode,
-      name: data.name,
-      village: data.village,
-      district: data.district,
-      state: data.state,
-      landUse: 'AGRICULTURAL'
-    })
-
-    const newDisplayParcel: DisplayParcel = {
-      id: created.id,
-      code: created.parcelCode,
-      locality: `${created.village || 'Village'}, ${created.district}`,
-      area: 'Pending boundary',
-      status: created.status,
-      isLive: true,
-      geometry: created.currentGeometry?.geometry
+    if (systemMode === 'LIVE' && !currentUser) {
+      setAuthModalReason('Authentication required: Sign in to register a new cadastral parcel.')
+      setIsAuthModalOpen(true)
+      return
+    }
+    if (systemMode === 'LIVE' && currentUser && !currentUser.roles.some((r) => r === 'ADMIN' || r === 'SURVEYOR')) {
+      setActionStatus({
+        type: 'error',
+        message: 'Permission denied: Parcel registration requires SURVEYOR or ADMIN role.'
+      })
+      return
     }
 
-    setParcels((prev) => [newDisplayParcel, ...prev])
-    setSelectedParcel(newDisplayParcel)
-    setParcelDetail(created)
-    setActionStatus({
-      type: 'success',
-      message: `Parcel ${created.parcelCode} registered successfully.`
-    })
+    try {
+      const created = await parcelApi.create({
+        parcelCode: data.parcelCode,
+        name: data.name,
+        village: data.village,
+        district: data.district,
+        state: data.state,
+        landUse: 'AGRICULTURAL'
+      })
+
+      const newDisplayParcel: DisplayParcel = {
+        id: created.id,
+        code: created.parcelCode,
+        locality: `${created.village || 'Village'}, ${created.district}`,
+        area: 'Pending boundary',
+        status: created.status,
+        isLive: true,
+        geometry: created.currentGeometry?.geometry
+      }
+
+      setParcels((prev) => [newDisplayParcel, ...prev])
+      setSelectedParcel(newDisplayParcel)
+      setParcelDetail(created)
+      setActionStatus({
+        type: 'success',
+        message: `Parcel ${created.parcelCode} registered successfully.`
+      })
+    } catch (err: unknown) {
+      if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+        setAuthModalReason(`Authentication required (HTTP ${err.status}): ${err.message}`)
+        setIsAuthModalOpen(true)
+      }
+      setActionStatus({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Parcel registration failed.'
+      })
+    }
   }
 
   const handleProposeDummyBoundary = async () => {
@@ -5723,6 +6022,19 @@ export default function App() {
       setActionStatus({
         type: 'success',
         message: `Boundary proposal v2 registered for ${selectedParcel.code}. Review delta in Boundary Review.`
+      })
+      return
+    }
+
+    if (systemMode === 'LIVE' && !currentUser) {
+      setAuthModalReason('Authentication required: Sign in to propose a boundary on the live ledger.')
+      setIsAuthModalOpen(true)
+      return
+    }
+    if (systemMode === 'LIVE' && currentUser && !currentUser.roles.some((r) => r === 'ADMIN' || r === 'SURVEYOR')) {
+      setActionStatus({
+        type: 'error',
+        message: 'Permission denied: Boundary proposal submission requires SURVEYOR or ADMIN role.'
       })
       return
     }
@@ -5757,6 +6069,10 @@ export default function App() {
       setGeometryHistory(updatedHistory)
       setParcelDetail(updatedDetail)
     } catch (err: unknown) {
+      if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+        setAuthModalReason(`Authentication required (HTTP ${err.status}): ${err.message}`)
+        setIsAuthModalOpen(true)
+      }
       setActionStatus({
         type: 'error',
         message: err instanceof Error ? err.message : 'Proposal submission failed.'
@@ -5767,6 +6083,19 @@ export default function App() {
   const handleApproveBoundary = async (notes: string) => {
     const historyList = Array.isArray(geometryHistory) ? geometryHistory : []
     if (selectedParcel.isLive && historyList.length > 0) {
+      if (!currentUser) {
+        setAuthModalReason('Authentication required: Sign in to verify and gazette cadastral boundaries.')
+        setIsAuthModalOpen(true)
+        return
+      }
+      if (!currentUser.roles.some((r) => r === 'ADMIN' || r === 'REVIEWER')) {
+        setActionStatus({
+          type: 'error',
+          message: 'Permission denied: Boundary verification requires REVIEWER or ADMIN role.'
+        })
+        return
+      }
+
       const pending = historyList.find((g) => g.status === 'PROPOSED')
       if (pending) {
         try {
@@ -5783,6 +6112,10 @@ export default function App() {
           setParcelDetail(updatedDetail)
           return
         } catch (err: unknown) {
+          if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+            setAuthModalReason(`Authentication required (HTTP ${err.status}): ${err.message}`)
+            setIsAuthModalOpen(true)
+          }
           setActionStatus({
             type: 'error',
             message: err instanceof Error ? err.message : 'Verification failed.'
@@ -5807,6 +6140,19 @@ export default function App() {
     }
     const historyList = Array.isArray(geometryHistory) ? geometryHistory : []
     if (selectedParcel.isLive && historyList.length > 0) {
+      if (!currentUser) {
+        setAuthModalReason('Authentication required: Sign in to reject cadastral boundaries.')
+        setIsAuthModalOpen(true)
+        return
+      }
+      if (!currentUser.roles.some((r) => r === 'ADMIN' || r === 'REVIEWER')) {
+        setActionStatus({
+          type: 'error',
+          message: 'Permission denied: Boundary rejection requires REVIEWER or ADMIN role.'
+        })
+        return
+      }
+
       const pending = historyList.find((g) => g.status === 'PROPOSED')
       if (pending) {
         try {
@@ -5823,6 +6169,10 @@ export default function App() {
           setParcelDetail(updatedDetail)
           return
         } catch (err: unknown) {
+          if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+            setAuthModalReason(`Authentication required (HTTP ${err.status}): ${err.message}`)
+            setIsAuthModalOpen(true)
+          }
           setActionStatus({
             type: 'error',
             message: err instanceof Error ? err.message : 'Rejection failed.'
@@ -5919,6 +6269,12 @@ export default function App() {
         go={go}
         userRole={userRole}
         onToggleUserRole={() => setUserRole((r) => (r === 'REVIEWER' ? 'SURVEYOR' : 'REVIEWER'))}
+        currentUser={currentUser}
+        systemMode={systemMode}
+        onOpenAuthModal={() => {
+          setAuthModalReason('Administrator authentication required to manage cadastral configuration.')
+          setIsAuthModalOpen(true)
+        }}
       />
     )
 
@@ -6010,18 +6366,108 @@ export default function App() {
               </button>
             )}
           </label>
-          <span className="location">◉ District 4 · Academic demonstration zone</span>
-          <button
-            className="user"
-            title="Click to toggle between Reviewer and Surveyor roles"
-            onClick={() => setUserRole((r) => (r === 'REVIEWER' ? 'SURVEYOR' : 'REVIEWER'))}
-            style={{ cursor: 'pointer', background: 'transparent' }}
+
+          <div
+            className={`mode-pill ${systemMode === 'LIVE' ? 'live' : systemMode === 'CONNECTING' ? 'connecting' : 'demo'}`}
+            title={
+              systemMode === 'LIVE'
+                ? 'Connected to live Spring Boot & PostGIS backend'
+                : systemMode === 'CONNECTING'
+                  ? 'Connecting to backend...'
+                  : 'Offline demonstration mode with synthetic records'
+            }
           >
-            {userRole === 'REVIEWER' ? 'Senior Reviewer' : 'Survey Officer'}
-          </button>
+            <span className={`mode-dot ${systemMode === 'LIVE' ? 'live' : 'demo'}`} />
+            <span>{systemMode === 'LIVE' ? 'LIVE BACKEND' : systemMode === 'CONNECTING' ? 'CONNECTING...' : 'OFFLINE DEMO'}</span>
+          </div>
+
+          <span className="location">◉ District 4 · Academic demonstration zone</span>
+
+          {currentUser ? (
+            <div className="user-session-chip">
+              <span className="material-symbols-outlined text-[16px]" style={{ color: '#4a1f2b' }} aria-hidden="true">account_circle</span>
+              <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: '#4a1f2b' }}>{currentUser.username}</span>
+                <div style={{ display: 'flex', gap: '3px', marginTop: '2px' }}>
+                  {currentUser.roles.map((r) => (
+                    <span key={r} className={`role-badge-pill ${r.toLowerCase()}`}>{r}</span>
+                  ))}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="button"
+                onClick={handleLogout}
+                style={{
+                  marginLeft: '6px',
+                  padding: '3px 8px',
+                  fontSize: '11px',
+                  background: 'transparent',
+                  borderColor: '#d9cec7',
+                  color: '#6e625d'
+                }}
+                title="Sign out of GeoNexus"
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                className="user"
+                title="Click to toggle between Reviewer and Surveyor roles"
+                onClick={() => setUserRole((r) => (r === 'REVIEWER' ? 'SURVEYOR' : 'REVIEWER'))}
+                style={{ cursor: 'pointer', background: 'transparent' }}
+              >
+                {userRole === 'REVIEWER' ? 'Senior Reviewer (Demo)' : 'Survey Officer (Demo)'}
+              </button>
+              <button
+                type="button"
+                className="button orange-button"
+                onClick={() => {
+                  setAuthModalReason(undefined)
+                  setIsAuthModalOpen(true)
+                }}
+                style={{ padding: '6px 14px', fontSize: '12px', fontWeight: 600 }}
+              >
+                Sign In
+              </button>
+            </div>
+          )}
         </header>
 
         <main>
+          {systemMode === 'DEMO' && (
+            <div className="auth-mode-notice-banner" role="status">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="material-symbols-outlined text-[18px]">info</span>
+                <span>
+                  <strong>Offline Academic Demo Mode:</strong> Operating with client-side synthetic parcels and simulated spatial telemetry. Backend API and PostGIS database are offline.
+                </span>
+              </div>
+            </div>
+          )}
+          {backendError && (
+            <div className="auth-mode-notice-banner error" role="alert">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="material-symbols-outlined text-[18px]">error</span>
+                <span>
+                  <strong>API Notice:</strong> {backendError}
+                </span>
+              </div>
+              <button
+                type="button"
+                className="button primary"
+                onClick={() => {
+                  setAuthModalReason('Authentication required to access live backend.')
+                  setIsAuthModalOpen(true)
+                }}
+                style={{ padding: '4px 10px', fontSize: '11px' }}
+              >
+                Sign In
+              </button>
+            </div>
+          )}
           {actionStatus && view !== 'boundary' && (
             <div className={`notification-banner ${actionStatus.type}`} role="alert">
               <span>{actionStatus.type === 'success' ? '✓ ' : '⚠ '}{actionStatus.message}</span>
@@ -6056,6 +6502,21 @@ export default function App() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleCreateParcel}
+      />
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSuccess={(user) => {
+          setCurrentUser(user)
+          setIsAuthModalOpen(false)
+          setBackendError(null)
+          setActionStatus({
+            type: 'success',
+            message: `Authenticated successfully as ${user.username} [${user.roles.join(', ')}].`
+          })
+        }}
+        reason={authModalReason}
       />
     </div>
   )
