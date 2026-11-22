@@ -27,7 +27,7 @@ import {
   type AuditRecordResponse
 } from './api/client'
 
-type View = 'dashboard' | 'map' | 'parcel' | 'boundary' | 'reports' | 'audit'
+type View = 'dashboard' | 'map' | 'parcel' | 'surveys' | 'boundary' | 'reports' | 'audit' | 'administration'
 
 interface DisplayParcel {
   id: string
@@ -226,13 +226,15 @@ const DEFAULT_PARCELS: DisplayParcel[] = [
   }
 ]
 
-const nav: Array<[View, string, string]> = [
-  ['dashboard', 'Dashboard', '▦'],
-  ['map', 'Map workspace', '⌑'],
-  ['parcel', 'Parcels', '◇'],
-  ['boundary', 'Boundary review', '◫'],
-  ['reports', 'Reports', '▤'],
-  ['audit', 'Audit history', '⏳']
+const nav: Array<[View, string, string, string]> = [
+  ['dashboard', 'Dashboard', 'dashboard', 'dashboard'],
+  ['map', 'Map Workspace', 'map', 'map-workspace'],
+  ['parcel', 'Parcels', 'polyline', 'parcels'],
+  ['surveys', 'Surveys', 'architecture', 'surveys'],
+  ['boundary', 'Boundary Review', 'difference', 'boundary-review'],
+  ['reports', 'Reports', 'lab_profile', 'reports'],
+  ['audit', 'Audit History', 'history_edu', 'audit-history'],
+  ['administration', 'Administration', 'tune', 'administration']
 ]
 
 interface ExtractedRing {
@@ -1537,7 +1539,8 @@ function Dashboard({
       {/* Top Legal & Scholarly Notice Ribbon */}
       <div className="disclaimer-ribbon">
         <div className="disclaimer-ribbon-left">
-          <span style={{ fontWeight: 700, color: '#a03f24' }}>⚖ LEGAL &amp; SCHOLARLY NOTICE:</span>
+          <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#4a1f2b' }} aria-hidden="true">gavel</span>
+          <span style={{ fontWeight: 600 }}>LEGAL &amp; SCHOLARLY NOTICE:</span>
           <span>
             GeoNexus Academic Research GIS — Operational Cadastral Records. Boundary comparison is an academic review aid and does not constitute a certified legal deed until gazetted.
           </span>
@@ -1550,21 +1553,31 @@ function Dashboard({
       </div>
 
       {/* Operational Header Section */}
-      <section className="heading">
+      <section className="heading" style={{ marginBottom: '16px' }}>
         <div>
-          <p className="eyebrow">Cadastral Governance Portal / District 4 (Western Agricultural Basin)</p>
-          <h2>Cadastral Survey Operations Overview</h2>
-          <p>Field Survey Season 2024–25 • Real-time adjudication ledger, monument network telemetry &amp; resurvey delta metrics.</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#6e625d', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginBottom: '4px' }}>
+            <span>Cadastral Governance Portal</span>
+            <span className="material-symbols-outlined" style={{ fontSize: '12px' }} aria-hidden="true">chevron_right</span>
+            <span>District 4 (Western Agricultural Basin)</span>
+          </div>
+          <h1 style={{ fontSize: '28px', margin: '4px 0 2px', lineHeight: 1.2 }}>Cadastral Survey Operations Overview</h1>
+          <p style={{ margin: 0, color: '#6e625d', fontSize: '13px' }}>
+            Field Survey Season 2024–25 • Real-time adjudication ledger, monument network telemetry &amp; resurvey delta metrics.
+          </p>
         </div>
         <div className="actions">
-          <button className="button secondary" onClick={() => go('map')}>
-            Open map workspace
+          <button className="button secondary" onClick={() => go('map')} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }} aria-hidden="true">map</span>
+            <span>Open Map Workspace</span>
           </button>
-          <button className="button orange-button" onClick={onNewParcel}>
-            ＋ New Parcel Entry
+          <button className="button secondary" onClick={() => go('boundary')} style={{ display: 'flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }} aria-hidden="true">rate_review</span>
+            <span>Review Queue</span>
+            <span style={{ marginLeft: '4px', padding: '1px 6px', borderRadius: '10px', background: '#4a1f2b', color: '#fff8ed', fontSize: '10px', fontFamily: 'JetBrains Mono, monospace' }}>14</span>
           </button>
-          <button className="button primary" onClick={() => go('parcel')}>
-            Review parcels
+          <button className="button primary" onClick={onNewParcel} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }} aria-hidden="true">add_circle</span>
+            <span>New Survey Entry</span>
           </button>
         </div>
       </section>
@@ -1572,12 +1585,15 @@ function Dashboard({
       {/* Operational Status Metric Band */}
       <section className="metrics" aria-label="Demonstration operations metrics">
         <article>
-          <p>
-            Active resurveys{' '}
-            <small style={{ textTransform: 'none', color: '#a03f24', fontSize: '9px', fontWeight: 600 }}>
-              [Demo]
-            </small>
-          </p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <p style={{ margin: 0 }}>
+              In-Flight Resurveys{' '}
+              <small style={{ textTransform: 'none', color: '#a03f24', fontSize: '9px', fontWeight: 600 }}>
+                [Demo]
+              </small>
+            </p>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#4a1f2b' }} aria-hidden="true">polyline</span>
+          </div>
           <strong>{analytics?.summary?.inFlightResurveysCount || 42}</strong>
           <span>14 awaiting review (simulated)</span>
           <div className="metric-sub-bar">
@@ -1589,14 +1605,17 @@ function Dashboard({
           </div>
         </article>
         <article>
-          <p>
-            Flagged for review{' '}
-            <small style={{ textTransform: 'none', color: '#a03f24', fontSize: '9px', fontWeight: 600 }}>
-              [Demo]
-            </small>
-          </p>
-          <strong className="orange">{analytics?.summary?.flaggedForReviewCount || 18} parcels</strong>
-          <span>Area or boundary variance</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <p style={{ margin: 0 }}>
+              Flagged for Review{' '}
+              <small style={{ textTransform: 'none', color: '#a03f24', fontSize: '9px', fontWeight: 600 }}>
+                [Demo]
+              </small>
+            </p>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#a03f24' }} aria-hidden="true">warning</span>
+          </div>
+          <strong className="orange">{analytics?.summary?.flaggedForReviewCount || 18} Parcels</strong>
+          <span>Variance tolerance thresholds tripped</span>
           <div className="metric-sub-bar">
             <span style={{ color: '#a03f24', fontWeight: 600 }}>9 Area Var &gt;0.5%</span>
             <span>•</span>
@@ -1604,14 +1623,17 @@ function Dashboard({
           </div>
         </article>
         <article>
-          <p>
-            Validated this month{' '}
-            <small style={{ textTransform: 'none', color: '#a03f24', fontSize: '9px', fontWeight: 600 }}>
-              [Demo]
-            </small>
-          </p>
-          <strong>{analytics?.summary?.validationsPassedMtd || 184}</strong>
-          <span>Geometry checks passed</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <p style={{ margin: 0 }}>
+              Validations Passed (MTD){' '}
+              <small style={{ textTransform: 'none', color: '#a03f24', fontSize: '9px', fontWeight: 600 }}>
+                [Demo]
+              </small>
+            </p>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#4a1f2b' }} aria-hidden="true">verified</span>
+          </div>
+          <strong>{analytics?.summary?.validationsPassedMtd || 184} Parcels</strong>
+          <span>Closure ±0.015m compliant</span>
           <div className="metric-sub-bar">
             <span style={{ fontWeight: 600 }}>99.1% First-Pass</span>
             <span>•</span>
@@ -1619,14 +1641,17 @@ function Dashboard({
           </div>
         </article>
         <article>
-          <p>
-            Open audit items{' '}
-            <small style={{ textTransform: 'none', color: '#a03f24', fontSize: '9px', fontWeight: 600 }}>
-              [Demo]
-            </small>
-          </p>
-          <strong>{analytics?.summary?.activeGeodeticPillars ? `${analytics.summary.activeGeodeticPillars} Active` : 9}</strong>
-          <span>Reviewer action required</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <p style={{ margin: 0 }}>
+              Geodetic Network{' '}
+              <small style={{ textTransform: 'none', color: '#a03f24', fontSize: '9px', fontWeight: 600 }}>
+                [Demo]
+              </small>
+            </p>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#4a1f2b' }} aria-hidden="true">pin_drop</span>
+          </div>
+          <strong>{analytics?.summary?.activeGeodeticPillars ? `${analytics.summary.activeGeodeticPillars} Active` : '36 Active'}</strong>
+          <span>Primary cadastral pillars locked</span>
           <div className="metric-sub-bar">
             <span>100% Signal</span>
             <span>•</span>
@@ -1755,7 +1780,9 @@ function Dashboard({
                           <td>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                               <b style={{ fontFamily: 'JetBrains Mono, monospace' }}>{item.id}</b>
-                              <span style={{ fontSize: '10px', color: '#6e625d' }}>📌</span>
+                              <span className="material-symbols-outlined" style={{ fontSize: '14px', color: item.disputed ? '#ba1a1a' : '#6e625d' }} aria-hidden="true">
+                                {item.disputed ? 'priority_high' : item.id === 'PR-2024-0428' ? 'gps_fixed' : 'push_pin'}
+                              </span>
                             </div>
                             <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '10px', color: '#6e625d' }}>
                               {item.surveyNo}
@@ -1800,7 +1827,7 @@ function Dashboard({
                                   go('parcel')
                                 }}
                               >
-                                👁
+                                <span className="material-symbols-outlined" style={{ fontSize: '16px' }} aria-hidden="true">visibility</span>
                               </button>
                             </div>
                           </td>
@@ -1945,22 +1972,27 @@ function Dashboard({
             <div className="panel-title">
               <div>
                 <p className="eyebrow">Immutable Stream</p>
-                <h2>Cadastral audit ledger</h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#4a1f2b' }} aria-hidden="true">history_edu</span>
+                  <h2 style={{ margin: 0 }}>Cadastral audit ledger</h2>
+                </div>
               </div>
               <div style={{ display: 'flex', gap: '6px' }}>
                 <button
                   className="btn-inspect-coord"
                   title="Open full immutable audit history"
                   onClick={() => go('audit')}
+                  style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 600 }}
                 >
-                  📜 Full Ledger
+                  <span>Full Ledger</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: '14px' }} aria-hidden="true">arrow_forward</span>
                 </button>
                 <button
                   className="btn-inspect-coord"
                   title="Refresh audit ledger"
                   onClick={() => setLastSyncTime(new Date().toLocaleTimeString() + ' IST Today')}
                 >
-                  🔄 Sync
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }} aria-hidden="true">sync</span>
                 </button>
               </div>
             </div>
@@ -2053,7 +2085,10 @@ function Dashboard({
         <div className="panel-title" style={{ flexWrap: 'wrap' }}>
           <div>
             <p className="eyebrow">Seasonal Progress Telemetry</p>
-            <h2>Survey completion &amp; resurvey trend (seasonal cadastral progress)</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#4a1f2b' }} aria-hidden="true">trending_up</span>
+              <h2 style={{ margin: 0 }}>Survey completion &amp; resurvey trend (seasonal cadastral progress)</h2>
+            </div>
             <p style={{ fontSize: '13px', color: '#6e625d', margin: '4px 0 0' }}>
               Agricultural subdistrict field survey targets, traverse completion velocity, and seasonal climatic impediments.
             </p>
@@ -4644,15 +4679,840 @@ function NewParcelModal({
   )
 }
 
+interface SurveyDocketItem {
+  id: string
+  surveyNumber: string
+  parcelCode: string
+  locality: string
+  surveyType: 'INITIAL' | 'RESURVEY'
+  method: 'GNSS' | 'TOTAL_STATION' | 'DRONE' | 'IMAGERY_TRACE'
+  equipment: string
+  surveyDate: string
+  surveyor: string
+  surveyorRole: string
+  reviewer: string
+  closurePrecisionM: number
+  closureThresholdM: number
+  status: 'UNDER_REVIEW' | 'SUBMITTED' | 'IN_PROGRESS' | 'APPROVED' | 'REJECTED'
+  oldAreaHa: number
+  surveyedAreaHa: number
+  notes: string
+}
+
+const DEFAULT_SURVEY_DOCKETS: SurveyDocketItem[] = [
+  {
+    id: 'srv-001',
+    surveyNumber: 'SRV-2024-0911',
+    parcelCode: 'PR-2024-0412',
+    locality: 'Kothapeta Block 3, Agro-plot 14/B',
+    surveyType: 'RESURVEY',
+    method: 'GNSS',
+    equipment: 'Trimble R12 RTK GNSS Receiver',
+    surveyDate: '2024-11-18',
+    surveyor: 'M. Ananth',
+    surveyorRole: 'Staff Cert. L-3',
+    reviewer: 'Dr. E. Vance',
+    closurePrecisionM: 0.008,
+    closureThresholdM: 0.015,
+    status: 'UNDER_REVIEW',
+    oldAreaHa: 14.285,
+    surveyedAreaHa: 14.415,
+    notes: 'Krishna canal silt drift along north boundary. DGPS corners tied to CORS-01.'
+  },
+  {
+    id: 'srv-002',
+    surveyNumber: 'SRV-2024-0894',
+    parcelCode: 'PR-2024-0389',
+    locality: 'Mylavaram Sector 1, Canal Boundary Wall',
+    surveyType: 'RESURVEY',
+    method: 'TOTAL_STATION',
+    equipment: 'Leica TS16 1" Total Station',
+    surveyDate: '2024-11-12',
+    surveyor: 'P. Suresh',
+    surveyorRole: 'District Deputed',
+    reviewer: 'Dr. E. Vance',
+    closurePrecisionM: 0.012,
+    closureThresholdM: 0.015,
+    status: 'UNDER_REVIEW',
+    oldAreaHa: 8.100,
+    surveyedAreaHa: 7.940,
+    notes: 'Irrigation canal retaining wall encroachment. Adjoining government canal buffer conflict.'
+  },
+  {
+    id: 'srv-003',
+    surveyNumber: 'SRV-2024-0902',
+    parcelCode: 'PR-2024-0401',
+    locality: 'Nuzvid North, Orchard Buffer 7',
+    surveyType: 'INITIAL',
+    method: 'DRONE',
+    equipment: 'DJI Matrice 300 RTK Photogrammetry',
+    surveyDate: '2024-11-15',
+    surveyor: 'D. Rao',
+    surveyorRole: 'Chief Surveyor',
+    reviewer: 'K. Ramachandran',
+    closurePrecisionM: 0.004,
+    closureThresholdM: 0.015,
+    status: 'SUBMITTED',
+    oldAreaHa: 22.500,
+    surveyedAreaHa: 22.530,
+    notes: 'High-resolution orthomosaic (1.2 cm GSD) boundary extraction verified with 8 GCPs.'
+  },
+  {
+    id: 'srv-004',
+    surveyNumber: 'SRV-2024-0925',
+    parcelCode: 'PR-2024-0428',
+    locality: 'Kothapeta Block 4, Paddy Field 02',
+    surveyType: 'RESURVEY',
+    method: 'GNSS',
+    equipment: 'Trimble R12 RTK Dual-Frequency',
+    surveyDate: '2024-11-20',
+    surveyor: 'P. Suresh',
+    surveyorRole: 'District Deputed',
+    reviewer: 'Dr. E. Vance',
+    closurePrecisionM: 0.007,
+    closureThresholdM: 0.015,
+    status: 'UNDER_REVIEW',
+    oldAreaHa: 5.620,
+    surveyedAreaHa: 5.600,
+    notes: '24 DGPS points uploaded. Monument MON-412 locked. Boundary vertices verified.'
+  },
+  {
+    id: 'srv-005',
+    surveyNumber: 'SRV-2024-0889',
+    parcelCode: 'PR-2024-0365',
+    locality: 'Kothapeta East, Agro Basin 09',
+    surveyType: 'RESURVEY',
+    method: 'GNSS',
+    equipment: 'Leica GS18 T GNSS RTK Rover',
+    surveyDate: '2024-11-10',
+    surveyor: 'K. Ramachandran',
+    surveyorRole: 'Senior Reviewer',
+    reviewer: 'Dr. E. Vance',
+    closurePrecisionM: 0.005,
+    closureThresholdM: 0.015,
+    status: 'APPROVED',
+    oldAreaHa: 11.850,
+    surveyedAreaHa: 11.890,
+    notes: 'Traverse closure verified within statutory tolerance. Gazette register seal applied.'
+  },
+  {
+    id: 'srv-006',
+    surveyNumber: 'SRV-2024-0872',
+    parcelCode: 'PR-2024-0410',
+    locality: 'Gampalagudem West, Sector 2',
+    surveyType: 'INITIAL',
+    method: 'IMAGERY_TRACE',
+    equipment: 'Digitized High-Res Satellite Baseline',
+    surveyDate: '2024-10-28',
+    surveyor: 'S. Varma',
+    surveyorRole: 'Staff Surveyor',
+    reviewer: 'Dr. E. Vance',
+    closurePrecisionM: 0.038,
+    closureThresholdM: 0.015,
+    status: 'REJECTED',
+    oldAreaHa: 9.400,
+    surveyedAreaHa: 9.650,
+    notes: 'Traverse closure error 0.038m exceeds 0.015m cadastral standard. Returned to field unit.'
+  }
+]
+
+function SurveysView({
+  go,
+  onSelectParcelCode,
+  onInitiateResurvey
+}: {
+  go: (v: View) => void
+  onSelectParcelCode: (code: string) => void
+  onInitiateResurvey?: () => void
+}) {
+  const [filterStatus, setFilterStatus] = useState<string>('ALL')
+  const [filterMethod, setFilterMethod] = useState<string>('ALL')
+  const [search, setSearch] = useState<string>('')
+
+  const filteredSurveys = useMemo(() => {
+    return DEFAULT_SURVEY_DOCKETS.filter((item) => {
+      if (filterStatus !== 'ALL' && item.status !== filterStatus) return false
+      if (filterMethod !== 'ALL' && item.method !== filterMethod) return false
+      if (search.trim()) {
+        const q = search.trim().toLowerCase()
+        const matchNo = item.surveyNumber.toLowerCase().includes(q)
+        const matchParcel = item.parcelCode.toLowerCase().includes(q)
+        const matchLoc = item.locality.toLowerCase().includes(q)
+        const matchSurveyor = item.surveyor.toLowerCase().includes(q)
+        if (!matchNo && !matchParcel && !matchLoc && !matchSurveyor) return false
+      }
+      return true
+    })
+  }, [filterStatus, filterMethod, search])
+
+  const handleExportCsv = () => {
+    const csvEscape = (val: string | number | undefined | null) => {
+      if (val == null) return '""'
+      const str = String(val)
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`
+      }
+      return `"${str}"`
+    }
+
+    const headers = [
+      'Survey Docket Number',
+      'Target Parcel',
+      'Locality',
+      'Survey Type',
+      'Method',
+      'Equipment',
+      'Survey Date',
+      'Surveyor',
+      'Reviewer',
+      'Closure Precision (m)',
+      'Tolerance (m)',
+      'Status',
+      'Old Area (ha)',
+      'Surveyed Area (ha)',
+      'Notes'
+    ]
+
+    const rows = filteredSurveys.map((s) => [
+      s.surveyNumber,
+      s.parcelCode,
+      s.locality,
+      s.surveyType,
+      s.method,
+      s.equipment,
+      s.surveyDate,
+      s.surveyor,
+      s.reviewer,
+      s.closurePrecisionM,
+      s.closureThresholdM,
+      s.status,
+      s.oldAreaHa,
+      s.surveyedAreaHa,
+      s.notes
+    ])
+
+    const csvContent = [
+      headers.map(csvEscape).join(','),
+      ...rows.map((row) => row.map(csvEscape).join(','))
+    ].join('\r\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', 'geonexus-survey-operations-register.csv')
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
+  return (
+    <div className="surveys-container">
+      {/* Top Notice Ribbon */}
+      <div className="disclaimer-ribbon">
+        <div className="disclaimer-ribbon-left">
+          <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#4a1f2b' }} aria-hidden="true">gavel</span>
+          <span style={{ fontWeight: 600 }}>CADASTRAL SURVEY OPERATIONS:</span>
+          <span>
+            Official Cadastral Survey &amp; Resurvey Docket. Field measurements comply with Survey of India Class A precision standards.
+          </span>
+        </div>
+        <div className="disclaimer-ribbon-right">
+          <span>CRS: EPSG:4326 / EPSG:32644 (UTM 44N)</span>
+          <span>•</span>
+          <span>TOLERANCE: ±0.015m</span>
+        </div>
+      </div>
+
+      {/* Heading */}
+      <section className="heading" style={{ marginBottom: '16px' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#6e625d', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginBottom: '4px' }}>
+            <span>Cadastral Operations</span>
+            <span className="material-symbols-outlined" style={{ fontSize: '12px' }} aria-hidden="true">chevron_right</span>
+            <span>Field Surveys &amp; Resurvey Workflow</span>
+          </div>
+          <h1 style={{ fontSize: '28px', margin: '4px 0 2px', lineHeight: 1.2 }}>Cadastral Survey Operations Ledger</h1>
+          <p style={{ margin: 0, color: '#6e625d', fontSize: '13px' }}>
+            Field Survey Season 2024–25 • Real-time adjudication ledger, GNSS/DGPS field captures, and four-eyes review queues.
+          </p>
+        </div>
+        <div className="actions">
+          {onInitiateResurvey && (
+            <button className="button primary" onClick={onInitiateResurvey} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }} aria-hidden="true">add_circle</span>
+              <span>New Survey Entry</span>
+            </button>
+          )}
+          <button className="button secondary" onClick={handleExportCsv} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }} aria-hidden="true">download</span>
+            <span>Export Register (CSV)</span>
+          </button>
+        </div>
+      </section>
+
+      {/* KPI Cards */}
+      <section className="metrics">
+        <article>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <p style={{ margin: 0 }}>Active Survey Dockets</p>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#4a1f2b' }} aria-hidden="true">architecture</span>
+          </div>
+          <strong>42 In-Flight</strong>
+          <span>District active dockets</span>
+          <div className="metric-sub-bar">
+            <span>14 Under Review</span>
+            <span>•</span>
+            <span>18 In Field</span>
+            <span>•</span>
+            <span>10 Draft</span>
+          </div>
+        </article>
+        <article>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <p style={{ margin: 0 }}>Awaiting Adjudication</p>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#a03f24' }} aria-hidden="true">rate_review</span>
+          </div>
+          <strong className="orange">14 Dockets</strong>
+          <span>Requires Senior Reviewer seal</span>
+          <div className="metric-sub-bar">
+            <span style={{ color: '#a03f24', fontWeight: 600 }}>9 Silt / Drift</span>
+            <span>•</span>
+            <span>5 Disputed</span>
+          </div>
+        </article>
+        <article>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <p style={{ margin: 0 }}>Surveyed Area Coverage</p>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#4a1f2b' }} aria-hidden="true">landscape</span>
+          </div>
+          <strong>1,428.5 ha</strong>
+          <span>MTD field coverage</span>
+          <div className="metric-sub-bar">
+            <span style={{ fontWeight: 600 }}>184 Parcels Ingested</span>
+            <span>•</span>
+            <span>6 Agro-Basins</span>
+          </div>
+        </article>
+        <article>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <p style={{ margin: 0 }}>Traverse Closure Pass</p>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#4a1f2b' }} aria-hidden="true">verified</span>
+          </div>
+          <strong>99.1% Pass</strong>
+          <span>Closure ≤ 0.015 m compliant</span>
+          <div className="metric-sub-bar">
+            <span>Mean RMSE: 0.005 m</span>
+            <span>•</span>
+            <span>RTK/DGPS Locked</span>
+          </div>
+        </article>
+      </section>
+
+      {/* Four-Eyes Security Banner */}
+      <div className="four-eyes-banner">
+        <span className="material-symbols-outlined" style={{ fontSize: '24px', color: '#a03f24' }} aria-hidden="true">security</span>
+        <div>
+          <b style={{ color: '#4a1f2b' }}>Statutory Four-Eyes Cadastral Rule (DB Constraint: ck_surveys_four_eyes):</b>
+          <span style={{ marginLeft: '6px' }}>
+            Field traverse proposals submitted by a Field Surveyor require independent verification by a certified Senior Reviewer before official mutation. Surveyors cannot approve their own submissions.
+          </span>
+        </div>
+      </div>
+
+      {/* Filter and Search Bar */}
+      <div className="survey-filter-cluster">
+        <div className="filter-pills-cluster">
+          <button
+            className={`filter-pill ${filterStatus === 'ALL' ? 'active' : ''}`}
+            onClick={() => setFilterStatus('ALL')}
+          >
+            All Dockets ({DEFAULT_SURVEY_DOCKETS.length})
+          </button>
+          <button
+            className={`filter-pill ${filterStatus === 'UNDER_REVIEW' ? 'active' : ''}`}
+            onClick={() => setFilterStatus('UNDER_REVIEW')}
+          >
+            Under Review (3)
+          </button>
+          <button
+            className={`filter-pill ${filterStatus === 'SUBMITTED' ? 'active' : ''}`}
+            onClick={() => setFilterStatus('SUBMITTED')}
+          >
+            Submitted (1)
+          </button>
+          <button
+            className={`filter-pill ${filterStatus === 'APPROVED' ? 'active' : ''}`}
+            onClick={() => setFilterStatus('APPROVED')}
+          >
+            Approved (1)
+          </button>
+          <button
+            className={`filter-pill ${filterStatus === 'REJECTED' ? 'active' : ''}`}
+            onClick={() => setFilterStatus('REJECTED')}
+          >
+            Closure Error / Rejected (1)
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <select
+            value={filterMethod}
+            onChange={(e) => setFilterMethod(e.target.value)}
+            style={{
+              padding: '5px 8px',
+              fontSize: '11px',
+              border: '1px solid #d9cec7',
+              borderRadius: '2px',
+              background: '#fffdfc'
+            }}
+          >
+            <option value="ALL">All Methods</option>
+            <option value="GNSS">GNSS RTK</option>
+            <option value="TOTAL_STATION">Total Station</option>
+            <option value="DRONE">Drone Photogrammetry</option>
+            <option value="IMAGERY_TRACE">Satellite Imagery Trace</option>
+          </select>
+
+          <input
+            type="text"
+            placeholder="Search survey #, parcel, surveyor..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              padding: '5px 8px',
+              fontSize: '11px',
+              border: '1px solid #d9cec7',
+              borderRadius: '2px',
+              background: '#fffdfc',
+              minWidth: '220px'
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Survey Docket Table */}
+      <div style={{ overflowX: 'auto', border: '1px solid #d9cec7', borderRadius: '3px' }}>
+        <table className="survey-table">
+          <thead>
+            <tr>
+              <th>Survey Docket</th>
+              <th>Target Parcel</th>
+              <th>Method &amp; Equipment</th>
+              <th>Survey Date</th>
+              <th>Surveyor &amp; Unit</th>
+              <th>Reviewer</th>
+              <th>Closure Precision</th>
+              <th>Area Old → Surveyed</th>
+              <th>Status</th>
+              <th style={{ textAlign: 'right' }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredSurveys.length === 0 ? (
+              <tr>
+                <td colSpan={10} style={{ textAlign: 'center', padding: '32px 16px', color: '#6e625d' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '28px', color: '#a03f24' }} aria-hidden="true">folder_off</span>
+                    <b style={{ color: '#4a1f2b' }}>No survey dockets match the selected filter criteria</b>
+                    <span style={{ fontSize: '11px' }}>Try resetting the status or method filters to view all available records.</span>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              filteredSurveys.map((item) => {
+                const isExceeded = item.closurePrecisionM > item.closureThresholdM
+              const deltaArea = item.surveyedAreaHa - item.oldAreaHa
+              const deltaSign = deltaArea >= 0 ? `+${deltaArea.toFixed(3)}` : deltaArea.toFixed(3)
+              return (
+                <tr key={item.id}>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <b style={{ fontFamily: 'JetBrains Mono, monospace', color: '#4a1f2b' }}>{item.surveyNumber}</b>
+                      <span className={`survey-type-badge ${item.surveyType.toLowerCase()}`}>
+                        {item.surveyType}
+                      </span>
+                    </div>
+                  </td>
+                  <td>
+                    <div style={{ fontWeight: 600, color: '#4a1f2b' }}>{item.parcelCode}</div>
+                    <div style={{ fontSize: '10px', color: '#6e625d' }}>{item.locality}</div>
+                  </td>
+                  <td>
+                    <div className="survey-method-pill">
+                      <span className="material-symbols-outlined" style={{ fontSize: '12px' }} aria-hidden="true">
+                        {item.method === 'GNSS' ? 'satellite_alt' : item.method === 'DRONE' ? 'flight' : item.method === 'TOTAL_STATION' ? 'explore' : 'draw'}
+                      </span>
+                      <span>{item.method}</span>
+                    </div>
+                    <div style={{ fontSize: '10px', color: '#6e625d', marginTop: '2px' }}>{item.equipment}</div>
+                  </td>
+                  <td style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '11px' }}>
+                    {item.surveyDate}
+                  </td>
+                  <td>
+                    <div style={{ fontWeight: 600, color: '#4a1f2b' }}>{item.surveyor}</div>
+                    <div style={{ fontSize: '10px', color: '#6e625d' }}>{item.surveyorRole}</div>
+                  </td>
+                  <td>
+                    <div style={{ fontSize: '11px', color: item.reviewer === 'Pending' ? '#a03f24' : '#4a1f2b' }}>
+                      {item.reviewer}
+                    </div>
+                  </td>
+                  <td>
+                    <span className={`closure-pill ${isExceeded ? 'exceeded' : 'pass'}`}>
+                      {item.closurePrecisionM.toFixed(3)} m {isExceeded ? '⚠ Exceeded' : '✓ Pass'}
+                    </span>
+                    <div style={{ fontSize: '9px', color: '#6e625d', marginTop: '2px', fontFamily: 'JetBrains Mono, monospace' }}>
+                      Limit: ±{item.closureThresholdM.toFixed(3)} m
+                    </div>
+                  </td>
+                  <td style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '11px' }}>
+                    <div>{item.oldAreaHa.toFixed(2)} → {item.surveyedAreaHa.toFixed(2)} ha</div>
+                    <div style={{ fontSize: '10px', color: deltaArea > 0 ? '#a03f24' : deltaArea < 0 ? '#ba1a1a' : '#6e625d', fontWeight: 600 }}>
+                      {deltaSign} ha
+                    </div>
+                  </td>
+                  <td>
+                    <span className={`status ${item.status === 'APPROVED' ? 'valid' : ''}`} style={item.status === 'REJECTED' ? { borderColor: '#ba1a1a', background: '#ffd9e0', color: '#ba1a1a' } : undefined}>
+                      {item.status.replace(/_/g, ' ')}
+                    </span>
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    <div className="action-btn-group">
+                      <button
+                        className="btn-inspect-coord"
+                        title="Inspect on Map"
+                        onClick={() => {
+                          onSelectParcelCode(item.parcelCode)
+                          go('map')
+                        }}
+                      >
+                        Map
+                      </button>
+                      <button
+                        className="btn-compare"
+                        title="Compare Boundaries"
+                        onClick={() => {
+                          onSelectParcelCode(item.parcelCode)
+                          go('boundary')
+                        }}
+                      >
+                        Compare
+                      </button>
+                      <button
+                        className="btn-inspect-coord"
+                        title="Official Dossier"
+                        onClick={() => {
+                          onSelectParcelCode(item.parcelCode)
+                          go('reports')
+                        }}
+                      >
+                        Dossier
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              )
+            }))}
+          </tbody>
+        </table>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#6e625d', padding: '4px' }}>
+        <span>Showing {filteredSurveys.length} of {DEFAULT_SURVEY_DOCKETS.length} survey dockets • Survey of India Precision Standard</span>
+        <span>Database Schema: Table surveys (Migration V4__surveys.sql)</span>
+      </div>
+    </div>
+  )
+}
+
+function AdministrationView({
+  go,
+  userRole,
+  onToggleUserRole
+}: {
+  go: (v: View) => void
+  userRole: 'REVIEWER' | 'SURVEYOR'
+  onToggleUserRole: () => void
+}) {
+  const [feedback, setFeedback] = useState<string | null>(null)
+
+  const officerRoster = [
+    { name: 'Dr. E. Vance', role: 'Senior Reviewer (Cadastral Lead)', email: 'e.vance@geonexus.gov.in', permissions: 'Gazettal Seal, Rejection, Precision Overrides, Full Audit' },
+    { name: 'M. Ananth', role: 'Field Surveyor (Staff Cert. L-3)', email: 'm.ananth@geonexus.gov.in', permissions: 'Traverse Capture, AI Edge Acceptance, Vertex Edits, DGPS Sync' },
+    { name: 'P. Suresh', role: 'District Deputed Surveyor', email: 'p.suresh@geonexus.gov.in', permissions: 'DGPS Point Ingestion, Monument Baseline Calibration' },
+    { name: 'K. Ramachandran', role: 'Senior Reviewer', email: 'k.ramachandran@geonexus.gov.in', permissions: 'Boundary Adjudication, Dispute Arbitration, Dossier Verification' },
+    { name: 'S. Varma', role: 'Quality Assurance Officer', email: 's.varma@geonexus.gov.in', permissions: 'Closure Precision Verification, Ledger Scrutiny, Non-Manifold Flagging' }
+  ]
+
+  const corsStations = [
+    { id: 'CORS-HYD-01', name: 'Kothapeta High Basin Monument', status: 'Locked (100%)', satellites: '28 GPS/GLO/GAL', freq: 'L1/L2/L5', rmseM: 0.003, lastSync: '14:30:18 IST' },
+    { id: 'CORS-HYD-02', name: 'Mylavaram Riparian Corridor Pillar', status: 'Locked (100%)', satellites: '26 GPS/GLO/GAL', freq: 'L1/L2/L5', rmseM: 0.004, lastSync: '14:28:45 IST' },
+    { id: 'CORS-HYD-03', name: 'Nuzvid Orchard Belt Pillar', status: 'Locked (99.8%)', satellites: '27 GPS/GLO/GAL', freq: 'L1/L2/L5', rmseM: 0.004, lastSync: '14:29:12 IST' },
+    { id: 'CORS-HYD-04', name: 'Tiruvuru Lower Delta Station', status: 'Active (98.9%)', satellites: '24 GPS/GLO/GAL', freq: 'L1/L2', rmseM: 0.006, lastSync: '14:25:01 IST' }
+  ]
+
+  const migrations = [
+    { version: 'V1', description: 'Core PostGIS spatial schema and spatial reference setup', applied: '2026-11-20', checksum: '61a298bf', status: 'SUCCESS' },
+    { version: 'V2', description: 'Users, roles and credential management (BCrypt/JWT)', applied: '2026-11-20', checksum: '87e21a44', status: 'SUCCESS' },
+    { version: 'V3', description: 'Land records, parcel geometry histories and spatial index', applied: '2026-11-21', checksum: '3f90cb12', status: 'SUCCESS' },
+    { version: 'V4', description: 'Surveys and resurveys workflow with four-eyes constraint', applied: '2026-11-21', checksum: 'e280ab91', status: 'SUCCESS' },
+    { version: 'V5', description: 'AI boundary edge detection candidates and corner stations', applied: '2026-11-21', checksum: '91bc740a', status: 'SUCCESS' },
+    { version: 'V6', description: 'Immutable audit logging with SHA-256 integrity verification', applied: '2026-11-21', checksum: '4a1f2b68', status: 'SUCCESS' }
+  ]
+
+  return (
+    <div className="admin-container">
+      {/* Top Notice Ribbon */}
+      <div className="disclaimer-ribbon">
+        <div className="disclaimer-ribbon-left">
+          <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#4a1f2b' }} aria-hidden="true">tune</span>
+          <span style={{ fontWeight: 600 }}>SYSTEM ADMINISTRATION &amp; GEODETIC GOVERNANCE:</span>
+          <span>
+            Authorized demonstration session. Telemetry, migration records, and parameters are simulated demonstration data for client-side evaluation.
+          </span>
+        </div>
+        <div className="disclaimer-ribbon-right">
+          <span>ROLE: {userRole === 'REVIEWER' ? 'Senior Reviewer' : 'Survey Officer'}</span>
+          <span>•</span>
+          <span>SESSION: CAD-D4-8819 (Demo)</span>
+        </div>
+      </div>
+
+      {feedback && (
+        <div className="notification-banner success" role="alert">
+          <span>✓ {feedback}</span>
+          <button type="button" onClick={() => setFeedback(null)} aria-label="Dismiss">✕</button>
+        </div>
+      )}
+
+      {/* Heading */}
+      <section className="heading" style={{ marginBottom: '16px' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#6e625d', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginBottom: '4px' }}>
+            <span>Cadastral Governance Portal</span>
+            <span className="material-symbols-outlined" style={{ fontSize: '12px' }} aria-hidden="true">chevron_right</span>
+            <span>System Administration &amp; Security (Simulated)</span>
+          </div>
+          <h1 style={{ fontSize: '28px', margin: '4px 0 2px', lineHeight: 1.2 }}>Cadastral Administration &amp; Geodetic Governance</h1>
+          <p style={{ margin: 0, color: '#6e625d', fontSize: '13px' }}>
+            System-wide spatial reference parameters, simulated geodetic network telemetry, client-side role delegation, and demo audit ledger provenance.
+          </p>
+        </div>
+        <div className="actions">
+          <button
+            className="button primary"
+            onClick={() => {
+              onToggleUserRole()
+              setFeedback(`Active session role successfully switched to ${userRole === 'REVIEWER' ? 'Survey Officer' : 'Senior Reviewer'} (Client session simulation - no backend state persisted).`)
+            }}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }} aria-hidden="true">switch_account</span>
+            <span>Switch to {userRole === 'REVIEWER' ? 'Survey Officer' : 'Senior Reviewer'}</span>
+          </button>
+          <button className="button secondary" onClick={() => go('audit')} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }} aria-hidden="true">history_edu</span>
+            <span>Audit History</span>
+          </button>
+        </div>
+      </section>
+
+      {/* Section 1: Spatial Reference System Calibration */}
+      <article className="panel">
+        <div className="panel-title">
+          <div>
+            <p className="eyebrow">Spatial Calibration &amp; Coordinate Reference</p>
+            <h2>Spatial Reference System (SRS) &amp; Precision Tolerances</h2>
+          </div>
+          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', color: '#4a1f2b', fontWeight: 600 }}>
+            Survey of India Class A Standards (EPSG:4326 / EPSG:32644)
+          </span>
+        </div>
+        <p style={{ fontSize: '12px', color: '#6e625d', margin: '0 0 14px' }}>
+          Authoritative cartographic parameters governing coordinate transformation, geodetic projection, and vertex closure tolerances within District 4 demonstration datasets.
+        </p>
+
+        <div className="admin-grid-3">
+          <div className="admin-param-card">
+            <small>Default Storage CRS</small>
+            <b>EPSG:4326</b>
+            <span>WGS84 2D Geographic Coordinates (Longitude, Latitude) degrees</span>
+          </div>
+          <div className="admin-param-card">
+            <small>Projected Metric Grid</small>
+            <b>EPSG:32644 (UTM Zone 44N)</b>
+            <span>Transverse Mercator projection for linear measurement &amp; area computation</span>
+          </div>
+          <div className="admin-param-card">
+            <small>Precision Closure Tolerance</small>
+            <b>± 0.015 m (15 mm)</b>
+            <span>Statutory traverse closure error threshold for agricultural boundaries</span>
+          </div>
+          <div className="admin-param-card">
+            <small>Area Variance Trigger Threshold</small>
+            <b>± 0.50%</b>
+            <span>Discrepancies exceeding ±0.5% require mandatory Senior Reviewer physical check</span>
+          </div>
+          <div className="admin-param-card">
+            <small>Vertex Proximity Snap Distance</small>
+            <b>0.050 m (5 cm)</b>
+            <span>Prevents sliver polygons and enforces topological manifold boundaries</span>
+          </div>
+          <div className="admin-param-card">
+            <small>Geodetic Datum &amp; Spheroid</small>
+            <b>WGS 84 Ellipsoid</b>
+            <span>Semi-major axis a = 6,378,137.0 m; Flattening 1/f = 298.257223563</span>
+          </div>
+        </div>
+      </article>
+
+      {/* Section 2: Role-Based Access Control & Four-Eyes Security Delegation */}
+      <article className="panel">
+        <div className="panel-title">
+          <div>
+            <p className="eyebrow">Security &amp; Authorization</p>
+            <h2>Cadastral Role &amp; Four-Eyes Security Delegation (Simulated)</h2>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '11px', color: '#6e625d' }}>Active Session:</span>
+            <span className="user" style={{ background: '#fdf1ea' }}>
+              {userRole === 'REVIEWER' ? 'Senior Reviewer (Review & Gazettal)' : 'Survey Officer (Field Ingestion)'}
+            </span>
+          </div>
+        </div>
+
+        <div className="four-eyes-banner" style={{ margin: '8px 0 14px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#a03f24' }} aria-hidden="true">verified_user</span>
+          <div>
+            <b>Database Constraint ck_surveys_four_eyes Active (Simulated Specification):</b>
+            <span style={{ marginLeft: '6px' }}>
+              A single officer cannot both create a survey proposal and approve it for gazettal. Approval operations verify reviewer_id ≠ surveyor_id. Role switching alters local client capabilities for testing.
+            </span>
+          </div>
+        </div>
+
+        <div style={{ overflowX: 'auto', border: '1px solid #d9cec7', borderRadius: '3px' }}>
+          <table className="survey-table">
+            <thead>
+              <tr>
+                <th>Cadastral Officer</th>
+                <th>Assigned Role</th>
+                <th>Government Email</th>
+                <th>Operational Permissions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {officerRoster.map((officer) => (
+                <tr key={officer.name}>
+                  <td style={{ fontWeight: 600, color: '#4a1f2b' }}>{officer.name}</td>
+                  <td>
+                    <span className="survey-type-badge initial">{officer.role}</span>
+                  </td>
+                  <td style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', color: '#6e625d' }}>{officer.email}</td>
+                  <td style={{ fontSize: '11px', color: '#4a1f2b' }}>{officer.permissions}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      {/* Section 3: Geodetic Network & CORS Telemetry */}
+      <article className="panel">
+        <div className="panel-title">
+          <div>
+            <p className="eyebrow">Geodetic Infrastructure (Simulated)</p>
+            <h2>Continuous Operating Reference Stations (CORS) Telemetry</h2>
+          </div>
+          <span style={{ fontSize: '11px', color: '#a03f24', fontWeight: 600 }}>
+            [Simulated Demonstration Telemetry] • 36 Synthetic Stations
+          </span>
+        </div>
+        <p style={{ fontSize: '12px', color: '#6e625d', margin: '0 0 14px' }}>
+          Simulated real-time kinematic (RTK) differential correction parameters illustrating 3-millimeter baseline stability across District 4 demo zone. No physical field hardware is queried.
+        </p>
+
+        <div className="admin-grid-2">
+          {corsStations.map((station) => (
+            <div key={station.id} className="cors-station-card">
+              <div className="cors-header">
+                <div>
+                  <span className="cors-title">{station.id}</span>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: '#4a1f2b' }}>{station.name}</div>
+                </div>
+                <span className="cors-status-chip">{station.status}</span>
+              </div>
+              <div className="cors-meta-grid">
+                <div>Satellites: <b style={{ color: '#4a1f2b' }}>{station.satellites}</b></div>
+                <div>Frequency: <b style={{ color: '#4a1f2b' }}>{station.freq}</b></div>
+                <div>Position RMSE: <b style={{ color: '#4a1f2b' }}>{station.rmseM.toFixed(3)} m</b></div>
+                <div>Last Telemetry: <b style={{ color: '#4a1f2b' }}>{station.lastSync}</b></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </article>
+
+      {/* Section 4: Database Migrations & Ledger Cryptographic Integrity */}
+      <article className="panel">
+        <div className="panel-title">
+          <div>
+            <p className="eyebrow">Database Provenance &amp; Schema Integrity</p>
+            <h2>Flyway Migrations &amp; Cryptographic Audit Ledger (Demonstration Checksums)</h2>
+          </div>
+          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', color: '#4a1f2b', fontWeight: 700 }}>
+            SHA-256 Ledger: DEMO SPECIFICATION
+          </span>
+        </div>
+        <p style={{ fontSize: '12px', color: '#6e625d', margin: '0 0 14px' }}>
+          PostgreSQL/PostGIS Flyway migration files (V1 through V6) define authoritative schemas and constraints. Displayed checksums and timestamps reflect repository migration specifications.
+        </p>
+
+        <div style={{ overflowX: 'auto', border: '1px solid #d9cec7', borderRadius: '3px', marginTop: '10px' }}>
+          <table className="survey-table">
+            <thead>
+              <tr>
+                <th>Migration</th>
+                <th>Description</th>
+                <th>Applied Date</th>
+                <th>SHA-256 Checksum</th>
+                <th>State</th>
+              </tr>
+            </thead>
+            <tbody>
+              {migrations.map((m) => (
+                <tr key={m.version}>
+                  <td style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: '#4a1f2b' }}>{m.version}</td>
+                  <td style={{ fontSize: '11px', color: '#4a1f2b' }}>{m.description}</td>
+                  <td style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', color: '#6e625d' }}>{m.applied}</td>
+                  <td>
+                    <span className="audit-hash-chip">{m.checksum}</span>
+                  </td>
+                  <td>
+                    <span className="status valid">{m.status}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </div>
+  )
+}
+
 export default function App() {
   const [view, setView] = useState<View>(() => {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase()
-      if (['dashboard', 'map', 'parcel', 'boundary', 'reports', 'audit'].includes(hash)) {
+      if (['dashboard', 'map', 'parcel', 'surveys', 'boundary', 'reports', 'audit', 'administration'].includes(hash)) {
         return hash as View
       }
       const search = new URLSearchParams(window.location.search).get('view')?.toLowerCase()
-      if (search && ['dashboard', 'map', 'parcel', 'boundary', 'reports', 'audit'].includes(search)) {
+      if (search && ['dashboard', 'map', 'parcel', 'surveys', 'boundary', 'reports', 'audit', 'administration'].includes(search)) {
         return search as View
       }
     }
@@ -5015,6 +5875,15 @@ export default function App() {
         go={go}
         onProposeGeometry={handleProposeDummyBoundary}
       />
+    ) : view === 'surveys' ? (
+      <SurveysView
+        go={go}
+        onSelectParcelCode={(code) => {
+          const found = parcels.find((p) => p.code === code || p.id === code)
+          if (found) setSelectedParcel(found)
+        }}
+        onInitiateResurvey={() => setIsModalOpen(true)}
+      />
     ) : view === 'boundary' ? (
       <BoundaryView
         selectedParcel={selectedParcel}
@@ -5034,7 +5903,7 @@ export default function App() {
         allParcels={parcels}
         onSelectParcel={(p) => setSelectedParcel(p)}
       />
-    ) : (
+    ) : view === 'audit' ? (
       <AuditView
         go={go}
         onSelectParcel={(code) => {
@@ -5045,37 +5914,62 @@ export default function App() {
           }
         }}
       />
+    ) : (
+      <AdministrationView
+        go={go}
+        userRole={userRole}
+        onToggleUserRole={() => setUserRole((r) => (r === 'REVIEWER' ? 'SURVEYOR' : 'REVIEWER'))}
+      />
     )
 
   return (
     <div className="app">
       <aside className="sidebar">
-        <button className="brand" onClick={() => go('dashboard')}>
-          <i>G</i>
-          <span>
-            <h1 style={{ fontSize: '22px', margin: 0, font: 'inherit', fontWeight: 600 }}>GeoNexus</h1>
-            <small>Academic GIS workspace</small>
-          </span>
-        </button>
+        <div>
+          <button className="brand" onClick={() => go('dashboard')}>
+            <span className="brand-badge">G</span>
+            <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+              <h1 style={{ fontSize: '18px', margin: 0, font: 'inherit', fontWeight: 600, color: '#4a1f2b' }}>GeoNexus</h1>
+              <small style={{ color: '#6e625d', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Cadastral GIS Engine</small>
+            </span>
+          </button>
 
-        <nav aria-label="Primary navigation">
-          {nav.map(([id, label, icon]) => (
-            <button
-              className={view === id ? 'nav active' : 'nav'}
-              onClick={() => go(id)}
-              key={id}
-              data-path={id === 'audit' ? 'audit-history' : id === 'map' ? 'map-workspace' : id === 'boundary' ? 'boundary-review' : id}
-            >
-              <i>{icon}</i>
-              {label}
-            </button>
-          ))}
-        </nav>
+          <div className="sidebar-section-header">Spatial Navigation</div>
 
-        <div className="sidebar-note">
-          <span>Academic project</span>
-          <b>GeoJSON: EPSG:4326</b>
-          <small>Not a legal cadastre</small>
+          <nav aria-label="Primary navigation">
+            {nav.map(([id, label, icon, dataPath]) => (
+              <button
+                className={view === id ? 'nav active' : 'nav'}
+                onClick={() => go(id)}
+                key={id}
+                data-path={dataPath}
+                aria-current={view === id ? 'page' : undefined}
+              >
+                <span className="material-symbols-outlined" aria-hidden="true">{icon}</span>
+                <span>{label}</span>
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        <div className="sidebar-footer">
+          <div className="sidebar-crs-card">
+            <div className="sidebar-crs-row">
+              <span>Storage CRS</span>
+              <b>EPSG:4326 (WGS 84)</b>
+            </div>
+            <div className="sidebar-crs-row">
+              <span>Projected Grid</span>
+              <b>EPSG:32644 (UTM 44N)</b>
+            </div>
+            <div className="sidebar-crs-row">
+              <span>Precision Tolerance</span>
+              <b>± 0.015 m</b>
+            </div>
+          </div>
+          <div className="sidebar-version-tag">
+            <span>v0.1.0 • Immutable Cadastre</span>
+          </div>
         </div>
       </aside>
 
