@@ -8,6 +8,7 @@ if (typeof window !== 'undefined') {
   if (!window.URL.revokeObjectURL) {
     window.URL.revokeObjectURL = () => {}
   }
+  window.scrollTo = () => {}
 }
 
 // ── Leaflet mock for jsdom ───────────────────────────────────────────────────
@@ -24,7 +25,8 @@ vi.mock('leaflet', () => {
     fitBounds: vi.fn(),
     zoomIn: vi.fn(),
     zoomOut: vi.fn(),
-    getZoom: vi.fn(() => 14)
+    getZoom: vi.fn(() => 14),
+    getCenter: vi.fn(() => ({ lat: 16.3005, lng: 80.4328 }))
   }
   const mockTileLayer = { ...mockLayer, on: vi.fn() }
   return {
