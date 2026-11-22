@@ -525,3 +525,209 @@
   }
 }
 
+/* Authentication & Full-Stack System Mode Styles */
+.mode-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-family: 'JetBrains Mono', monospace;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+}
+.mode-pill.live {
+  background: #e6f4ea;
+  color: #137333;
+  border-color: #ceead6;
+}
+.mode-pill.demo {
+  background: #fef7e0;
+  color: #b06000;
+  border-color: #fde293;
+}
+.mode-pill.connecting {
+  background: #f1f3f4;
+  color: #5f6368;
+  border-color: #dadce0;
+}
+.mode-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.mode-dot.live {
+  background: #1e8e3e;
+  box-shadow: 0 0 0 2px rgba(30, 142, 62, 0.25);
+}
+.mode-dot.demo {
+  background: #e37400;
+  box-shadow: 0 0 0 2px rgba(227, 116, 0, 0.25);
+}
+.mode-dot.connecting {
+  background: #80868b;
+}
+
+.user-session-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fffdfc;
+  border: 1px solid #d9cec7;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+.user-session-chip b {
+  color: #4a1f2b;
+  font-weight: 600;
+}
+.role-badge-pill {
+  display: inline-block;
+  padding: 1px 6px;
+  font-size: 9px;
+  font-weight: 700;
+  border-radius: 2px;
+  text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
+}
+.role-badge-pill.admin {
+  background: #ffd9e0;
+  color: #4a1f2b;
+  border: 1px solid #c08491;
+}
+.role-badge-pill.reviewer {
+  background: #ece0d9;
+  color: #4a1f2b;
+  border: 1px solid #d9cec7;
+}
+.role-badge-pill.surveyor {
+  background: #fdf1ea;
+  color: #a03f24;
+  border: 1px solid #ffdbd1;
+}
+.role-badge-pill.viewer {
+  background: #f2e6df;
+  color: #6e625d;
+  border: 1px solid #d9cec7;
+}
+
+.auth-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(49, 10, 23, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+  backdrop-filter: blur(2px);
+}
+.auth-modal {
+  background: #fff8ed;
+  border: 1px solid #d9cec7;
+  border-radius: 6px;
+  box-shadow: 0 16px 36px -6px rgba(74, 31, 43, 0.35);
+  width: 100%;
+  max-width: 440px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.auth-modal-header {
+  background: #f7e9e1;
+  border-bottom: 1px solid #d9cec7;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.auth-modal-header h3 {
+  margin: 0;
+  font-size: 19px;
+  color: #4a1f2b;
+  font-family: 'Newsreader', serif;
+}
+.auth-modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.auth-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.auth-input-group label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #4a1f2b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.auth-input-group input {
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid #d9cec7;
+  border-radius: 3px;
+  background: #fffdfc;
+  font-size: 13px;
+  color: #4a1f2b;
+}
+.auth-input-group input:focus {
+  border-color: #4a1f2b;
+  outline: none;
+}
+.auth-error-banner {
+  background: #ffdad6;
+  color: #ba1a1a;
+  border: 1px solid #ba1a1a;
+  padding: 10px 12px;
+  border-radius: 3px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.4;
+}
+.auth-demo-shortcut {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: #fdf1ea;
+  border: 1px solid #d9cec7;
+  border-radius: 3px;
+  font-size: 11px;
+  color: #6e625d;
+}
+.auth-demo-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.auth-mode-notice-banner {
+  background: #fdf1ea;
+  border: 1px solid #d9cec7;
+  border-left: 4px solid #e5a234;
+  color: #4a1f2b;
+  padding: 10px 14px;
+  font-size: 12px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.auth-mode-notice-banner.error {
+  border-left-color: #ba1a1a;
+  background: #ffdad6;
+  color: #ba1a1a;
+}
+
+

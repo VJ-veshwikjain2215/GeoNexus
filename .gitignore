@@ -63,3 +63,4 @@ desktop.ini
 .test-results/
 playwright-report/
 test-results/
+.neon

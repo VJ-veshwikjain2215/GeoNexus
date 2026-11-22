@@ -204,6 +204,7 @@ function mockFetch(impl: (url: string) => Promise<Response>) {
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  localStorage.clear()
 })
 
 describe('App shell', () => {
@@ -1201,5 +1202,99 @@ describe('App shell', () => {
     const switchRoleBtn = screen.getByRole('button', { name: /Switch to Survey Officer/i })
     await userEvent.click(switchRoleBtn)
     expect(screen.getByText(/Active session role successfully switched to Survey Officer/i)).toBeInTheDocument()
+  })
+
+  it('displays mode indicator distinguishing LIVE BACKEND vs OFFLINE DEMO', async () => {
+    mockFetch((url) => {
+      if (url.includes('/health')) return Promise.resolve(Response.json(healthBody))
+      if (url.includes('/parcels')) return Promise.resolve(Response.json(parcelsBody))
+      return Promise.reject(new Error('not mocked'))
+    })
+
+    render(<App />)
+    expect(await screen.findByText('LIVE BACKEND')).toBeInTheDocument()
+  })
+
+  it('displays OFFLINE DEMO mode indicator and notice banner when health check fails', async () => {
+    mockFetch((url) => {
+      if (url.includes('/health')) return Promise.reject(new TypeError('network down'))
+      if (url.includes('/parcels')) return Promise.reject(new TypeError('network down'))
+      return Promise.reject(new Error('not mocked'))
+    })
+
+    render(<App />)
+    expect(await screen.findByText('OFFLINE DEMO')).toBeInTheDocument()
+    expect(await screen.findByText(/Offline Academic Demo Mode:/i)).toBeInTheDocument()
+  })
+
+  it('allows user to open auth modal, sign in with credentials, display user session chip, and sign out', async () => {
+    mockFetch((url) => {
+      if (url.includes('/health')) return Promise.resolve(Response.json(healthBody))
+      if (url.includes('/parcels')) return Promise.resolve(Response.json(parcelsBody))
+      if (url.includes('/auth/login')) {
+        return Promise.resolve(
+          Response.json({
+            accessToken: 'mock-admin-token',
+            tokenType: 'Bearer',
+            expiresInSeconds: 1800,
+            user: { id: 'admin-id', username: 'admin', roles: ['ADMIN'] }
+          })
+        )
+      }
+      return Promise.reject(new Error(`not mocked: ${url}`))
+    })
+
+    render(<App />)
+    expect(await screen.findByText('LIVE BACKEND')).toBeInTheDocument()
+
+    // Sign in button is visible
+    const signInBtn = screen.getByRole('button', { name: /^Sign In$/i })
+    await userEvent.click(signInBtn)
+
+    // Auth modal is displayed
+    expect(await screen.findByRole('dialog', { name: /Authentication/i })).toBeInTheDocument()
+
+    // Click demo shortcut 'admin'
+    const adminShortcut = screen.getByRole('button', { name: /^Admin$/i })
+    await userEvent.click(adminShortcut)
+
+    // Submit form
+    const authenticateBtn = screen.getByRole('button', { name: /^Authenticate$/i })
+    await userEvent.click(authenticateBtn)
+
+    // User session chip should now be visible
+    expect(await screen.findByText('admin')).toBeInTheDocument()
+    expect(screen.getByText('ADMIN')).toBeInTheDocument()
+    expect(screen.getByText(/Authenticated successfully as admin/i)).toBeInTheDocument()
+
+    // Sign out
+    const signOutBtn = screen.getByRole('button', { name: /Sign Out/i })
+    await userEvent.click(signOutBtn)
+
+    expect(await screen.findByText(/You have been signed out of GeoNexus/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Sign In$/i })).toBeInTheDocument()
+  })
+
+  it('displays administrative lock banner when connected to LIVE backend without authentication', async () => {
+    mockFetch((url) => {
+      if (url.includes('/health')) return Promise.resolve(Response.json(healthBody))
+      if (url.includes('/parcels')) return Promise.resolve(Response.json(parcelsBody))
+      return Promise.reject(new Error('not mocked'))
+    })
+
+    render(<App />)
+    expect(await screen.findByText('LIVE BACKEND')).toBeInTheDocument()
+
+    const navEl = screen.getByRole('navigation', { name: 'Primary navigation' })
+    const adminNav = within(navEl).getByRole('button', { name: /Administration/i })
+    await userEvent.click(adminNav)
+
+    expect(await screen.findByText(/Administrative Access Restricted:/i)).toBeInTheDocument()
+    const adminSignInBtn = screen.getByRole('button', { name: /Sign In as Administrator/i })
+    expect(adminSignInBtn).toBeInTheDocument()
+    await userEvent.click(adminSignInBtn)
+
+    expect(await screen.findByRole('dialog', { name: /Authentication/i })).toBeInTheDocument()
+    expect(screen.getByText(/Administrator authentication required to manage cadastral configuration/i)).toBeInTheDocument()
   })
 })

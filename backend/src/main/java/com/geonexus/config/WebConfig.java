@@ -20,7 +20,7 @@ public class WebConfig implements WebMvcConfigurer {
 
     private final String[] allowedOrigins;
 
-    public WebConfig(@Value("${geonexus.cors.allowed-origins}") String[] allowedOrigins) {
+    public WebConfig(@Value("${geonexus.cors.allowed-origins:${geonexus.security.cors.allowed-origins:http://localhost:5173}}") String[] allowedOrigins) {
         this.allowedOrigins = Arrays.stream(allowedOrigins)
                 .map(String::trim)
                 .filter(origin -> !origin.isEmpty())

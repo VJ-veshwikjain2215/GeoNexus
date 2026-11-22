@@ -10,9 +10,11 @@ export interface UserSummary {
 }
 
 export interface LoginResponse {
-  token: string
+  accessToken?: string
+  token?: string
   tokenType: string
-  expiresAt: string
+  expiresInSeconds?: number
+  expiresAt?: string
   user: UserSummary
 }
 
@@ -542,14 +544,27 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify({ username, password })
     })
-    tokenStore.set(data.token, data.user)
+    const token = data.accessToken || data.token
+    if (token) {
+      tokenStore.set(token, data.user)
+    }
     return data
   },
   logout: (): void => {
     tokenStore.clear()
   },
   getCurrentUser: (): UserSummary | null => tokenStore.getUser(),
-  isAuthenticated: (): boolean => Boolean(tokenStore.get())
+  isAuthenticated: (): boolean => Boolean(tokenStore.get()),
+  getMe: async (): Promise<UserSummary> => {
+    const user = await request<UserSummary>('/auth/me')
+    if (user) {
+      const token = tokenStore.get()
+      if (token) {
+        tokenStore.set(token, user)
+      }
+    }
+    return user
+  }
 }
 
 // ==================== PARCEL API ====================

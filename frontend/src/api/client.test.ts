@@ -44,6 +44,42 @@ describe('GeoNexus API Client', () => {
     expect(authApi.isAuthenticated()).toBe(true)
   })
 
+  it('handles authApi login with accessToken and refreshes with getMe', async () => {
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      if (url.endsWith('/auth/login')) {
+        return Promise.resolve(
+          Response.json({
+            accessToken: 'admin-jwt-token-xyz',
+            tokenType: 'Bearer',
+            expiresInSeconds: 1800,
+            user: { id: 'u-admin', username: 'admin', roles: ['ADMIN'] }
+          })
+        )
+      }
+      if (url.endsWith('/auth/me')) {
+        return Promise.resolve(
+          Response.json({ id: 'u-admin', username: 'admin', roles: ['ADMIN'] })
+        )
+      }
+      return Promise.reject(new Error(`Unhandled URL: ${url}`))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const res = await authApi.login('admin', 'AdminPass123!')
+    expect(res.accessToken).toBe('admin-jwt-token-xyz')
+    expect(tokenStore.get()).toBe('admin-jwt-token-xyz')
+    expect(authApi.getCurrentUser()?.username).toBe('admin')
+
+    const me = await authApi.getMe()
+    expect(me.username).toBe('admin')
+    expect(me.roles).toContain('ADMIN')
+
+    authApi.logout()
+    expect(tokenStore.get()).toBeNull()
+    expect(authApi.getCurrentUser()).toBeNull()
+    expect(authApi.isAuthenticated()).toBe(false)
+  })
+
   it('sends Authorization header when token is present', async () => {
     tokenStore.set('my-secret-jwt')
     const fetchMock = vi.fn().mockResolvedValue(
