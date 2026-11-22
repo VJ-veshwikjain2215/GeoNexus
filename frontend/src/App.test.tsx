@@ -256,16 +256,16 @@ describe('App shell', () => {
     render(<App />)
 
     // Open map workspace
-    await userEvent.click(screen.getByRole('button', { name: '⌑Map workspace' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Map Workspace' }))
     expect(screen.getByText('Parcel review canvas')).toBeInTheDocument()
 
     // Open boundary review
-    await userEvent.click(screen.getByRole('button', { name: '◫Boundary review' }))
+    await userEvent.click(screen.getByRole('button', { name: /Boundary Review/i }))
     expect(screen.getByText('Boundary comparison')).toBeInTheDocument()
     expect(screen.getByText('Vertex change ledger')).toBeInTheDocument()
 
     // Open parcels dossier
-    await userEvent.click(screen.getByRole('button', { name: '◇Parcels' }))
+    await userEvent.click(screen.getByRole('button', { name: /Parcels/i }))
     expect(screen.getByText(/Parcel dossier:/)).toBeInTheDocument()
   })
 
@@ -330,7 +330,7 @@ describe('App shell', () => {
     })
 
     render(<App />)
-    await userEvent.click(screen.getByRole('button', { name: '⌑Map workspace' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Map Workspace' }))
     expect(screen.getByText('Parcel review canvas')).toBeInTheDocument()
 
     // Verify the Leaflet map container is rendered (replaces legacy SVG basemap)
@@ -366,7 +366,7 @@ describe('App shell', () => {
     })
 
     render(<App />)
-    await userEvent.click(screen.getByRole('button', { name: '⌑Map workspace' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Map Workspace' }))
     expect(await screen.findByText('No Verified Boundary Registered')).toBeInTheDocument()
     expect(screen.getByText(/does not have verified boundary coordinates/i)).toBeInTheDocument()
     expect(screen.getByText('＋ Propose Initial Boundary')).toBeInTheDocument()
@@ -383,7 +383,7 @@ describe('App shell', () => {
     })
 
     render(<App />)
-    await userEvent.click(screen.getByRole('button', { name: '⌑Map workspace' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Map Workspace' }))
     expect(await screen.findByText('⚠ Geometry Loading Error')).toBeInTheDocument()
     expect(screen.getByText('PostGIS service unreachable')).toBeInTheDocument()
   })
@@ -476,7 +476,7 @@ describe('App shell', () => {
     const revokeObjectURLSpy = vi.spyOn(URL, 'revokeObjectURL')
 
     render(<App />)
-    await userEvent.click(screen.getByRole('button', { name: '◫Boundary review' }))
+    await userEvent.click(screen.getByRole('button', { name: /Boundary Review/i }))
     expect(screen.getByText('Vertex change ledger')).toBeInTheDocument()
 
     const exportBtn = screen.getByRole('button', { name: 'Export vertex ledger as CSV' })
@@ -499,7 +499,7 @@ describe('App shell', () => {
     })
 
     render(<App />)
-    await userEvent.click(screen.getByRole('button', { name: '⌑Map workspace' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Map Workspace' }))
     expect(screen.getByText('Parcel review canvas')).toBeInTheDocument()
 
     // Leaflet map zoom controls are present
@@ -533,7 +533,7 @@ describe('App shell', () => {
     })
 
     render(<App />)
-    await userEvent.click(screen.getByRole('button', { name: '⌑Map workspace' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Map Workspace' }))
 
     // Initial active layer count is 5 (topo contours defaults to unchecked)
     expect(await screen.findByText('5 ACTIVE')).toBeInTheDocument()
@@ -562,7 +562,7 @@ describe('App shell', () => {
     })
 
     render(<App />)
-    await userEvent.click(screen.getByRole('button', { name: '⌑Map workspace' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Map Workspace' }))
 
     // LeafletParcelMap HUD toolbar renders with boundary edit and AI detect buttons
     const aiDetectBtn = screen.getByRole('button', { name: 'AI Boundary Detection' })
@@ -609,7 +609,7 @@ describe('App shell', () => {
     })
 
     render(<App />)
-    await userEvent.click(screen.getByRole('button', { name: '⌑Map workspace' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Map Workspace' }))
 
     // Easting should be formatted in meters (e.g. around 439,xxx m)
     const eastings = await screen.findAllByText(/439,\d{3}\.\d{2}\s*m/)
@@ -626,7 +626,7 @@ describe('App shell', () => {
     })
 
     render(<App />)
-    await userEvent.click(screen.getByRole('button', { name: '⌑Map workspace' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Map Workspace' }))
 
     expect(await screen.findByText('CRS: EPSG:4326 (UTM 44N)')).toBeInTheDocument()
   })
@@ -638,7 +638,7 @@ describe('App shell', () => {
     })
 
     render(<App />)
-    await userEvent.click(screen.getByRole('button', { name: '⌑Map workspace' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Map Workspace' }))
 
     const mapTab = screen.getByRole('button', { name: '⌑ Map View' })
     const layersTab = screen.getByRole('button', { name: /▤ Layers/i })
@@ -684,7 +684,7 @@ describe('App shell', () => {
     })
 
     render(<App />)
-    await userEvent.click(screen.getByRole('button', { name: '◫Boundary review' }))
+    await userEvent.click(screen.getByRole('button', { name: /Boundary Review/i }))
 
     expect(await screen.findByText('Boundary comparison')).toBeInTheDocument()
     expect(await screen.findByText(/0\.000\s*m/)).toBeInTheDocument()
@@ -701,7 +701,7 @@ describe('App shell', () => {
     const revokeObjectURLSpy = vi.spyOn(URL, 'revokeObjectURL')
 
     render(<App />)
-    await userEvent.click(screen.getByRole('button', { name: '⌑Map workspace' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Map Workspace' }))
 
     const exportGeoJsonBtn = screen.getByRole('button', { name: 'Export parcel boundary GeoJSON' })
     await userEvent.click(exportGeoJsonBtn)
@@ -717,7 +717,7 @@ describe('App shell', () => {
     })
 
     render(<App />)
-    await userEvent.click(screen.getByRole('button', { name: '⌑Map workspace' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Map Workspace' }))
 
     expect(await screen.findByText('AI Boundary Assistant')).toBeInTheDocument()
     expect(screen.getByText(/AI-suggested field edges are assistive drafts/i)).toBeInTheDocument()
@@ -782,7 +782,7 @@ describe('App shell', () => {
     })
 
     render(<App />)
-    await userEvent.click(screen.getByRole('button', { name: '⌑Map workspace' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Map Workspace' }))
 
     const detectBtn = screen.getByRole('button', { name: 'Run AI Edge Detection' })
     await userEvent.click(detectBtn)
@@ -831,7 +831,7 @@ describe('App shell', () => {
     })
 
     render(<App />)
-    await userEvent.click(screen.getByRole('button', { name: '◫Boundary review' }))
+    await userEvent.click(screen.getByRole('button', { name: /Boundary Review/i }))
 
     expect(await screen.findByText(/Assistive AI Boundary Suggestion/i)).toBeInTheDocument()
     expect(screen.getByText('AI_DETECTED')).toBeInTheDocument()
@@ -1162,5 +1162,44 @@ describe('App shell', () => {
 
     // Should arrive at ReportsView
     expect(await screen.findByText(/OFFICIAL CADASTRAL PARCEL DOSSIER & BOUNDARY LEDGER/i)).toBeInTheDocument()
+  })
+
+  it('navigates to Surveys and Administration views with complete functionality', async () => {
+    mockFetch((url) => {
+      if (url.includes('/health')) return Promise.resolve(Response.json(healthBody))
+      if (url.includes('/parcels')) return Promise.resolve(Response.json(parcelsBody))
+      return Promise.reject(new Error('not mocked'))
+    })
+
+    render(<App />)
+
+    // Navigate to Surveys
+    const navEl = screen.getByRole('navigation', { name: 'Primary navigation' })
+    const surveysNav = within(navEl).getByRole('button', { name: /Surveys/i })
+    await userEvent.click(surveysNav)
+
+    expect(screen.getByText(/Cadastral Survey Operations Ledger/i)).toBeInTheDocument()
+    expect(screen.getByText('SRV-2024-0911')).toBeInTheDocument()
+    expect(screen.getByText(/Statutory Four-Eyes Cadastral Rule/i)).toBeInTheDocument()
+
+    // Test filter pills in Surveys
+    const underReviewPill = screen.getByRole('button', { name: /Under Review \(3\)/i })
+    await userEvent.click(underReviewPill)
+    expect(screen.getByText('SRV-2024-0911')).toBeInTheDocument()
+
+    // Navigate to Administration
+    const adminNav = within(navEl).getByRole('button', { name: /Administration/i })
+    await userEvent.click(adminNav)
+
+    expect(screen.getByText(/Cadastral Administration & Geodetic Governance/i)).toBeInTheDocument()
+    expect(screen.getByText('EPSG:4326')).toBeInTheDocument()
+    expect(screen.getByText('EPSG:32644 (UTM Zone 44N)')).toBeInTheDocument()
+    expect(screen.getByText(/CORS-HYD-01/i)).toBeInTheDocument()
+    expect(screen.getByText(/Flyway Migrations/i)).toBeInTheDocument()
+
+    // Switch role in Administration
+    const switchRoleBtn = screen.getByRole('button', { name: /Switch to Survey Officer/i })
+    await userEvent.click(switchRoleBtn)
+    expect(screen.getByText(/Active session role successfully switched to Survey Officer/i)).toBeInTheDocument()
   })
 })
