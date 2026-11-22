@@ -160,6 +160,8 @@ export function LeafletParcelMap({
   const tileErrorRef = useRef(false)
   const [tileError, setTileError] = useState(false)
   const [mapReady, setMapReady] = useState(false)
+  const [currentZoom, setCurrentZoom] = useState<number>(DEFAULT_ZOOM)
+  const [centerLat, setCenterLat] = useState<number>(DEFAULT_CENTER[0])
 
   // Track layer refs for removal/re-add on prop changes
   const recordedLayerRef = useRef<import('leaflet').Polygon | null>(null)
@@ -223,10 +225,48 @@ export function LeafletParcelMap({
       onCoordinateMove?.(latStr, lngStr)
     })
 
+    // Track zoom and center movements to maintain dynamically accurate scale bar
+    const handleZoomOrMove = () => {
+      try {
+        const z = map.getZoom()
+        if (typeof z === 'number' && !isNaN(z)) {
+          setCurrentZoom(z)
+        }
+        if (typeof map.getCenter === 'function') {
+          const c = map.getCenter()
+          if (c && typeof c.lat === 'number' && !isNaN(c.lat)) {
+            setCenterLat(c.lat)
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+    map.on('zoomend', handleZoomOrMove)
+    map.on('moveend', handleZoomOrMove)
+
+    // Invalidate map size on window and container resize
+    const handleResize = () => {
+      map.invalidateSize()
+    }
+    window.addEventListener('resize', handleResize)
+
+    let resizeObserver: ResizeObserver | null = null
+    if (typeof ResizeObserver !== 'undefined' && containerRef.current) {
+      resizeObserver = new ResizeObserver(() => {
+        map.invalidateSize()
+      })
+      resizeObserver.observe(containerRef.current)
+    }
+
     mapRef.current = map
     setMapReady(true)
 
     return () => {
+      window.removeEventListener('resize', handleResize)
+      resizeObserver?.disconnect()
+      map.off?.('zoomend', handleZoomOrMove)
+      map.off?.('moveend', handleZoomOrMove)
       map.remove()
       mapRef.current = null
       tileErrorRef.current = false
@@ -364,6 +404,12 @@ export function LeafletParcelMap({
         { sticky: true, className: 'geonexus-tooltip' }
       )
       poly.on('click', () => onSelectParcelCode?.(sp.code))
+      poly.on('mouseover', () => {
+        poly.setStyle({ weight: 2.5, fillColor: '#f2ded4', fillOpacity: 0.6 })
+      })
+      poly.on('mouseout', () => {
+        poly.setStyle(STYLE_SURROUNDING)
+      })
       poly.addTo(group)
     }
     group.addTo(map)
@@ -396,6 +442,64 @@ export function LeafletParcelMap({
       containerRef.current.__fitToParcels = fitToParcels
     }
   }, [fitToParcels])
+
+  // ── Dynamically accurate cadastral scale bar calculation ────────────────
+  const { scaleWidthPx, scaleRatioLabel, ticks } = useMemo(() => {
+    // Web Mercator meters per pixel at current center latitude and zoom:
+    // C * cos(lat) / (256 * 2^zoom), where C = 40,075,016.686m
+    const latRad = (centerLat * Math.PI) / 180
+    const metersPerPx = (40075016.686 * Math.cos(latRad)) / (256 * Math.pow(2, currentZoom))
+
+    // Representative fraction: at standard display density 96 DPI (0.000264583 m/CSS px)
+    const rawRatio = metersPerPx * 3779.5275
+    let scaleRatioLabel: string
+    if (rawRatio >= 10000) {
+      scaleRatioLabel = `1 : ${(Math.round(rawRatio / 1000) * 1000).toLocaleString()}`
+    } else if (rawRatio >= 2000) {
+      scaleRatioLabel = `1 : ${(Math.round(rawRatio / 100) * 100).toLocaleString()}`
+    } else if (rawRatio >= 500) {
+      scaleRatioLabel = `1 : ${(Math.round(rawRatio / 50) * 50).toLocaleString()}`
+    } else {
+      scaleRatioLabel = `1 : ${Math.round(rawRatio).toLocaleString()}`
+    }
+
+    // Target scale bar width ~140px; choose standard cadastral/metric distance
+    const targetPx = 140
+    const targetMeters = targetPx * metersPerPx
+    const candidateDistances = [
+      10, 20, 50, 100, 200, 400, 500, 1000, 2000, 4000, 5000, 10000, 20000
+    ]
+
+    let bestDist = candidateDistances[0]
+    let minDiff = Infinity
+    for (const d of candidateDistances) {
+      const px = d / metersPerPx
+      if (px >= 75 && px <= 210) {
+        const diff = Math.abs(px - targetPx)
+        if (diff < minDiff) {
+          minDiff = diff
+          bestDist = d
+        }
+      }
+    }
+    if (minDiff === Infinity) {
+      bestDist = candidateDistances.reduce((prev, curr) =>
+        Math.abs(curr - targetMeters) < Math.abs(prev - targetMeters) ? curr : prev
+      )
+    }
+
+    const scaleWidthPx = Math.max(75, Math.round(bestDist / metersPerPx))
+    const formatDist = (m: number) => (m >= 1000 ? `${m / 1000}km` : `${m}m`)
+
+    const ticks = [
+      '0',
+      formatDist(Math.round(bestDist / 4)),
+      formatDist(Math.round(bestDist / 2)),
+      formatDist(bestDist)
+    ]
+
+    return { scaleWidthPx, scaleRatioLabel, ticks }
+  }, [currentZoom, centerLat])
 
   // ── Zoom handlers ───────────────────────────────────────────────────────
   const handleZoomIn = () => mapRef.current?.zoomIn()
@@ -644,6 +748,30 @@ export function LeafletParcelMap({
         <button aria-label="Zoom in" title="Zoom In" onClick={handleZoomIn}>+</button>
         <div style={{ height: '1px', background: '#d9cec7', margin: '1px 3px' }} />
         <button aria-label="Zoom out" title="Zoom Out" onClick={handleZoomOut}>−</button>
+      </div>
+
+      {/* Precision Cadastral Scale Bar (dynamically accurate across zoom levels) */}
+      <div
+        className="map-scale-bar"
+        aria-label={`Map scale ${scaleRatioLabel}`}
+        style={{ zIndex: 25, bottom: 38, width: scaleWidthPx + 20, minWidth: 140 }}
+      >
+        <div className="scale-ticks" style={{ position: 'relative', width: scaleWidthPx, height: 11 }}>
+          <span style={{ position: 'absolute', left: 0 }}>0</span>
+          <span style={{ position: 'absolute', left: '25%', transform: 'translateX(-50%)' }}>{ticks[1]}</span>
+          <span style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>{ticks[2]}</span>
+          <span style={{ position: 'absolute', right: 0 }}>{ticks[3]}</span>
+        </div>
+        <div className="scale-bar-track" style={{ width: scaleWidthPx }}>
+          <div className="scale-block oxblood" />
+          <div className="scale-block white" />
+          <div className="scale-block oxblood" />
+          <div className="scale-block white" />
+        </div>
+        <div className="scale-meta" style={{ width: scaleWidthPx }}>
+          <span>{scaleRatioLabel}</span>
+          <span>UTM 44N</span>
+        </div>
       </div>
 
       {/* Orthophoto backdrop – honest labeling when layer is on */}

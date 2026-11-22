@@ -93,6 +93,71 @@ const DEMO_GEOMETRY_401: GeoJsonGeometry = {
   ]
 }
 
+const DEMO_GEOMETRY_410: GeoJsonGeometry = {
+  type: 'Polygon',
+  coordinates: [
+    [
+      [80.426, 16.302],
+      [80.4305, 16.3021],
+      [80.43, 16.2981],
+      [80.4255, 16.298],
+      [80.426, 16.302]
+    ]
+  ]
+}
+
+const DEMO_GEOMETRY_413: GeoJsonGeometry = {
+  type: 'Polygon',
+  coordinates: [
+    [
+      [80.4355, 16.3025],
+      [80.44, 16.3028],
+      [80.4395, 16.2988],
+      [80.4348, 16.2985],
+      [80.4355, 16.3025]
+    ]
+  ]
+}
+
+const DEMO_GEOMETRY_418: GeoJsonGeometry = {
+  type: 'Polygon',
+  coordinates: [
+    [
+      [80.4312, 16.3065],
+      [80.4358, 16.307],
+      [80.4355, 16.3025],
+      [80.4312, 16.3021],
+      [80.4312, 16.3065]
+    ]
+  ]
+}
+
+const DEMO_GEOMETRY_428: GeoJsonGeometry = {
+  type: 'Polygon',
+  coordinates: [
+    [
+      [80.4305, 16.2981],
+      [80.4348, 16.2985],
+      [80.4342, 16.2945],
+      [80.43, 16.2942],
+      [80.4305, 16.2981]
+    ]
+  ]
+}
+
+const DEMO_GEOMETRY_429: GeoJsonGeometry = {
+  type: 'Polygon',
+  coordinates: [
+    [
+      [80.4348, 16.2985],
+      [80.4395, 16.2988],
+      [80.439, 16.2948],
+      [80.4342, 16.2945],
+      [80.4348, 16.2985]
+    ]
+  ]
+}
+
 const DEFAULT_PARCELS: DisplayParcel[] = [
   {
     id: 'PR-2024-0412',
@@ -118,6 +183,46 @@ const DEFAULT_PARCELS: DisplayParcel[] = [
     area: '22.500 ha',
     status: 'Pending sign-off',
     geometry: DEMO_GEOMETRY_401
+  },
+  {
+    id: 'PR-2024-0428',
+    code: 'PR-2024-0428',
+    locality: 'Kothapeta Block 4',
+    area: '5.620 ha',
+    status: 'Pending sign-off',
+    geometry: DEMO_GEOMETRY_428
+  },
+  {
+    id: 'PR-2024-0410',
+    code: 'PR-2024-0410',
+    locality: 'Kothapeta Block 2',
+    area: '9.450 ha',
+    status: 'Validated',
+    geometry: DEMO_GEOMETRY_410
+  },
+  {
+    id: 'PR-2024-0413',
+    code: 'PR-2024-0413',
+    locality: 'Kothapeta Block 3',
+    area: '11.200 ha',
+    status: 'Validated',
+    geometry: DEMO_GEOMETRY_413
+  },
+  {
+    id: 'PR-2024-0418',
+    code: 'PR-2024-0418',
+    locality: 'Kothapeta Block 3',
+    area: '18.750 ha',
+    status: 'Under review',
+    geometry: DEMO_GEOMETRY_418
+  },
+  {
+    id: 'PR-2024-0429',
+    code: 'PR-2024-0429',
+    locality: 'Kothapeta Block 4',
+    area: '16.320 ha',
+    status: 'Validated',
+    geometry: DEMO_GEOMETRY_429
   }
 ]
 
@@ -1745,7 +1850,7 @@ function Dashboard({
                   </div>
                   <div className="area-dist-bar-track">
                     <div
-                      className="area-dist-bar-fill"
+                      className={`area-dist-bar-fill ${bin.category.toLowerCase().replace(/[^a-z]/g, '-')}`}
                       style={{ width: `${Math.max(bin.percentage, 4)}%` }}
                     />
                   </div>
@@ -3105,10 +3210,6 @@ function BoundaryView({
   }
 
   const handleReject = async () => {
-    if (!decisionNotes.trim()) {
-      alert('Please specify rejection rationale in the decision notes field.')
-      return
-    }
     setIsSubmitting(true)
     try {
       await onRequestResurvey(decisionNotes)
@@ -4699,6 +4800,9 @@ export default function App() {
     startTransition(() => {
       setView(v)
       setActionStatus(null)
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
     })
   }
 
@@ -4739,7 +4843,27 @@ export default function App() {
 
   const handleProposeDummyBoundary = async () => {
     if (!selectedParcel.isLive) {
-      alert('Selected parcel is in demo mode. Create a live parcel or connect to backend.')
+      const sampleProposed: GeoJsonGeometry = {
+        type: 'Polygon',
+        coordinates: [
+          [
+            [80.431, 16.3024],
+            [80.4358, 16.3027],
+            [80.4352, 16.2982],
+            [80.4303, 16.2979],
+            [80.431, 16.3024]
+          ]
+        ]
+      }
+      setSelectedParcel((prev) => ({
+        ...prev,
+        proposedGeometry: sampleProposed,
+        status: 'Under review'
+      }))
+      setActionStatus({
+        type: 'success',
+        message: `Boundary proposal v2 registered for ${selectedParcel.code}. Review delta in Boundary Review.`
+      })
       return
     }
 
@@ -4814,6 +4938,13 @@ export default function App() {
   }
 
   const handleRejectBoundary = async (reason: string) => {
+    if (!reason || !reason.trim()) {
+      setActionStatus({
+        type: 'error',
+        message: 'Please specify rejection rationale in the decision notes field.'
+      })
+      return
+    }
     const historyList = Array.isArray(geometryHistory) ? geometryHistory : []
     if (selectedParcel.isLive && historyList.length > 0) {
       const pending = historyList.find((g) => g.status === 'PROPOSED')
@@ -4996,7 +5127,30 @@ export default function App() {
           </button>
         </header>
 
-        <main>{body}</main>
+        <main>
+          {actionStatus && view !== 'boundary' && (
+            <div className={`notification-banner ${actionStatus.type}`} role="alert">
+              <span>{actionStatus.type === 'success' ? '✓ ' : '⚠ '}{actionStatus.message}</span>
+              <button
+                type="button"
+                onClick={() => setActionStatus(null)}
+                style={{
+                  border: 0,
+                  background: 'transparent',
+                  color: 'inherit',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  fontWeight: 700,
+                  padding: '0 4px'
+                }}
+                aria-label="Dismiss notification"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+          {body}
+        </main>
 
         <footer>
           GeoNexus is an independent academic project, not an official cadastral or government system.
